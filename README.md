@@ -21,26 +21,18 @@ Post-COVID classrooms need hybrid-ready, tech-driven engagement tools. Teachers 
 
 ## Technical Overview
 
-- **Frontend:** Next.js (React + TypeScript), Tailwind CSS  
-- **Backend:** Node.js (Express or NestJS), PostgreSQL  
-- **Real-Time:** WebSockets for live interactions  
-- **AI Layer:** OpenAI or Gemini integration for analysis and summaries  
-- **Notifications:** SendGrid for in-app and email updates  
+- **Frontend:** Next.js (React + TypeScript), Tailwind CSS
+- **Backend:** Node.js (Express or NestJS), PostgreSQL
+- **Real-Time:** WebSockets for live interactions
+- **AI Layer:** OpenAI or Gemini integration for analysis and summaries
+- **Notifications:** SendGrid for in-app and email updates
 
 ## Value
 
-- **For Students:** Lowers anxiety and makes participation meaningful.  
-- **For Teachers:** Saves time and provides actionable insights.  
-- **For Schools:** Delivers data on engagement and teaching effectiveness.  
-
-## Team
-
-- Mahdi Alsalami – Frontend / UI Design  
-- Noah Kim – UX Research  
-- Cole Hartman – Backend Development  
-- Marius Rousset – Documentation  
+- **For Students:** Lowers anxiety and makes participation meaningful.
+- **For Teachers:** Saves time and provides actionable insights.
+- **For Schools:** Delivers data on engagement and teaching effectiveness.
 
 ## Branding
 
 Lumo’s branding centers on a glowing pulse icon that changes color with engagement levels, symbolizing energy and inclusivity in the classroom.
-
