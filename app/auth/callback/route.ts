@@ -1,34 +1,73 @@
+// app/auth/callback/route.ts
 import { NextResponse } from "next/server";
-// The client you created from the Server-Side Auth instructions
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // if "next" is in param, use it as the redirect URL
-  let next = searchParams.get("next") ?? "/";
-  if (!next.startsWith("/")) {
-    // if "next" is not a relative URL, use the default
-    next = "/";
+
+  // Keep ?next if it's a safe relative path
+  let next = searchParams.get("next") ?? null;
+  if (next && !next.startsWith("/")) next = null;
+
+  if (!code) {
+    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
   }
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === "development";
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+  const supabase = await createClient();
+
+  // 1) Exchange auth code -> session cookie
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  }
+
+  // 2) Ensure profile exists
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.redirect(`${origin}/auth/login`);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id, role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let destination = "/dashboard";
+
+  if (!profile) {
+    const { error } = await supabase.from("profiles").insert({
+      user_id: user.id,
+      display_name:
+        (user.user_metadata as any)?.full_name ??
+        user.email?.split("@")[0] ??
+        "User",
+      role: "pending",
+      avatar: "",
+    });
+    if (error) {
+      console.error(error);
     }
+    destination = "/profile";
+  } else if (!profile.role) {
+    destination = "/profile";
+  } else if (next) {
+    destination = next; // only after we know they already have a role
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // 3) Redirect (preserve your forwarded host logic)
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalEnv = process.env.NODE_ENV === "development";
+
+  if (isLocalEnv) {
+    return NextResponse.redirect(`${origin}${destination}`);
+  } else if (forwardedHost) {
+    return NextResponse.redirect(`https://${forwardedHost}${destination}`);
+  } else {
+    return NextResponse.redirect(`${origin}${destination}`);
+  }
 }
+
+// Optional for some hosting setups
+export const dynamic = "force-dynamic";
