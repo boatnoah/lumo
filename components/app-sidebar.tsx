@@ -2,14 +2,10 @@
 
 import * as React from "react";
 import {
-  ArrowUpCircleIcon,
-  BarChartIcon,
-  CameraIcon,
+  Circle,
   ClipboardListIcon,
   DatabaseIcon,
-  FileCodeIcon,
   FileIcon,
-  FileTextIcon,
   FolderIcon,
   HelpCircleIcon,
   LayoutDashboardIcon,
@@ -106,7 +102,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/">
-                <ArrowUpCircleIcon className="h-5 w-5" />
+                <Circle className="h-5 w-5 animate-pulse" />
                 <span className="text-base font-semibold">Lumo</span>
               </a>
             </SidebarMenuButton>
