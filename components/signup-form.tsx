@@ -47,19 +47,17 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         password,
         options: {
           // If you’re using a unified /auth/confirm route, you can change this to:
-          // emailRedirectTo: `${window.location.origin}/auth/confirm?next=/protected`,
+          // emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
           emailRedirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/protected`
+              ? `${window.location.origin}/dashboard`
               : undefined,
           data: { full_name: name },
         },
       });
 
       if (error) throw error;
-
-      // Keep your post-signup UX the same as your bottom component:
-      router.push("/auth/sign-up-success");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -75,10 +73,10 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          // Use your callback that exchanges the code and then redirects to /protected
+          // Use your callback that exchanges the code and then redirects to /dashboard
           redirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/auth/callback?next=/protected`
+              ? `${window.location.origin}/auth/callback?next=/dashboard`
               : undefined,
         },
       });
