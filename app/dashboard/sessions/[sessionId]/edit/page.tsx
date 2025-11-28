@@ -1,29 +1,66 @@
 import { createClient } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
+
+import SessionBuilder from "./session-builder";
+
+type PromptRow = {
+  prompt_id: number;
+  slide_index: number;
+  kind: "mcq" | "short_text" | "long_text" | "slide";
+  content: unknown;
+  is_open: boolean;
+  released: boolean;
+  created_by: string;
+};
 
 export default async function EditSessionPage({
   params,
 }: {
   params: { sessionId: string };
 }) {
-  const supabase = await createClient();
   const sessionId = Number(params.sessionId);
+  if (!Number.isFinite(sessionId)) {
+    notFound();
+  }
 
-  // needs major refactoring
-  const [{ data: session }, { data: prompts }] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select("session_id, title, status, current_prompt_id")
-      .eq("session_id", sessionId)
-      .single(),
-    supabase
-      .from("prompts")
-      .select("prompt_id, slide_index, kind, content")
-      .eq("session_id", sessionId)
-      .order("slide_index"),
-  ]);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  console.log(session, prompts);
+  if (!user) {
+    redirect("/auth/login");
+  }
 
-  // pass to a client component <SessionBuilder session={session} prompts={prompts} />
-  return <div>builder here</div>;
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("session_id, title, description, owner_id")
+    .eq("session_id", sessionId)
+    .single();
+
+  if (!session) {
+    notFound();
+  }
+
+  if (session.owner_id !== user.id) {
+    redirect("/dashboard");
+  }
+
+  const { data: prompts } = await supabase
+    .from("prompts")
+    .select(
+      "prompt_id, slide_index, kind, content, is_open, released, created_by",
+    )
+    .eq("session_id", sessionId)
+    .order("slide_index");
+
+  return (
+    <SessionBuilder
+      sessionId={session.session_id}
+      sessionTitle={session.title}
+      sessionDescription={session.description || ""}
+      userId={user.id}
+      initialPrompts={(prompts as PromptRow[]) ?? []}
+    />
+  );
 }
