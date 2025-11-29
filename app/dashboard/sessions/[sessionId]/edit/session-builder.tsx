@@ -28,6 +28,7 @@ import {
   UploadCloudIcon,
   XIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -109,6 +110,7 @@ export default function SessionBuilder({
   userId,
   initialPrompts,
 }: Props) {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -127,6 +129,7 @@ export default function SessionBuilder({
   const [baselineIds, setBaselineIds] = useState<number[]>(
     initialPrompts.map((p) => p.prompt_id).filter(Boolean) as number[],
   );
+  const [goLiveLoading, setGoLiveLoading] = useState(false);
 
   useEffect(() => {
     const normalized = normalizePrompts(initialPrompts, userId);
@@ -190,6 +193,31 @@ export default function SessionBuilder({
     setPrompts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, content } : p)),
     );
+  };
+
+  const handleGoLive = async () => {
+    setGoLiveLoading(true);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "live",
+          current_prompt: selected?.prompt_id ?? null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(json?.error || "Could not go live.");
+        return;
+      }
+      toast.success("Session is live. Opening the live view...");
+      router.push(`/dashboard/sessions/${sessionId}/live`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not go live.");
+    } finally {
+      setGoLiveLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -363,10 +391,17 @@ export default function SessionBuilder({
             placeholder="What is this session about?"
           />
         </div>
-        <div className="flex items-center gap-2 pt-2 sm:pt-6 sm:justify-end">
+        <div className="flex flex-col items-stretch gap-2 pt-2 sm:pt-6 sm:items-end">
           <Button onClick={handleSave} disabled={saving}>
             <SaveIcon className="h-4 w-4" />
             {saving ? "Saving..." : "Save session"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleGoLive}
+            disabled={goLiveLoading}
+          >
+            {goLiveLoading ? "Going live..." : "Go live"}
           </Button>
         </div>
       </div>
