@@ -66,6 +66,7 @@ export default function StudentLiveView({
   const supabase = useMemo(() => createClient(), []);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const presenceRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>(
     session.status,
@@ -171,7 +172,7 @@ export default function StudentLiveView({
     };
   }, [session.session_id, supabase, user.id, user.name]);
 
-  // Live chat: fetch and subscribe
+  // Live chat: fetch and subscribe via broadcast
   useEffect(() => {
     const loadMessages = async () => {
       const { data, error } = await supabase
@@ -194,37 +195,30 @@ export default function StudentLiveView({
 
     loadMessages();
 
+    // Use broadcast channel for instant message updates (doesn't require DB realtime enabled)
     const channel = supabase
-      .channel(`messages-${session.session_id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `session_id=eq.${session.session_id}`,
-        },
-        (payload) => {
-          const row = payload.new as any;
-          setMessages((prev) => [
-            {
-              message_id: row.message_id,
-              body: row.body,
-              user_id: row.user_id,
-              display_name:
-                row.profiles?.display_name ||
-                prev.find((m) => m.user_id === row.user_id)?.display_name ||
-                "Student",
-              created_at: row.created_at,
-            },
-            ...prev,
-          ]);
-        },
-      )
+      .channel(`chat-${session.session_id}`, {
+        config: { broadcast: { self: true } },
+      })
+      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+        const msg = payload as ChatMessage;
+        setMessages((prev) => {
+          // Prevent duplicates
+          if (prev.some((m) => m.message_id === msg.message_id)) {
+            return prev;
+          }
+          return [msg, ...prev];
+        });
+      })
       .subscribe();
 
+    chatChannelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (chatChannelRef.current) {
+        supabase.removeChannel(chatChannelRef.current);
+        chatChannelRef.current = null;
+      }
     };
   }, [session.session_id, supabase]);
 
@@ -305,13 +299,29 @@ export default function StudentLiveView({
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
-    const { error } = await supabase.from("messages").insert({
+    const { data, error } = await supabase.from("messages").insert({
       body: text,
       session_id: session.session_id,
       user_id: user.id,
-    });
+    }).select();
     if (error) {
       toast.error("Could not send message.");
+    } else {
+      // Broadcast the new message to all connected clients
+      if (data && data[0] && chatChannelRef.current) {
+        const newMessage: ChatMessage = {
+          message_id: data[0].message_id,
+          body: data[0].body,
+          user_id: data[0].user_id,
+          display_name: user.name,
+          created_at: data[0].created_at,
+        };
+        chatChannelRef.current.send({
+          type: "broadcast",
+          event: "new_message",
+          payload: newMessage,
+        });
+      }
     }
   };
 
@@ -354,9 +364,9 @@ export default function StudentLiveView({
             <CardContent className="flex h-[520px] flex-col gap-3">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex -space-x-2">
-                  {presence.slice(0, 5).map((p) => (
+                  {presence.slice(0, 5).map((p, idx) => (
                     <div
-                      key={p.user_id}
+                      key={`${p.user_id}-${idx}`}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
                     >
                       {p.display_name.slice(0, 2).toUpperCase()}
