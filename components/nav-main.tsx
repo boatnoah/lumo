@@ -29,7 +29,7 @@ export function NavMain({ items, role }: { items: NavItem[]; role: Role }) {
 
   const handlePrimaryClick = async () => {
     if (!isTeacher) {
-      router.push("/join");
+      router.push("/session");
       return;
     }
 
@@ -64,7 +64,7 @@ export function NavMain({ items, role }: { items: NavItem[]; role: Role }) {
                 tooltip={primaryLabel}
                 className="inline-flex w-auto bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
               >
-                <Link href="/join">
+                <Link href="/session">
                   <PrimaryIcon />
                   <span>{primaryLabel}</span>
                 </Link>

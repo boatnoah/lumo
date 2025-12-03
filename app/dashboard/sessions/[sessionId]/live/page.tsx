@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
-import SessionBuilder from "./session-builder";
+import { createClient } from "@/lib/supabase/server";
+import LiveTeacherView from "./teacher-view";
 
 type PromptRow = {
   prompt_id: number;
@@ -10,10 +10,9 @@ type PromptRow = {
   content: unknown;
   is_open: boolean;
   released: boolean;
-  created_by: string;
 };
 
-export default async function EditSessionPage({
+export default async function LiveSessionPage({
   params,
 }: {
   params: { sessionId: string };
@@ -34,9 +33,11 @@ export default async function EditSessionPage({
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("session_id, title, description, owner_id")
+    .select(
+      "session_id, owner_id, title, description, status, join_code, current_prompt",
+    )
     .eq("session_id", sessionId)
-    .single();
+    .maybeSingle();
 
   if (!session) {
     notFound();
@@ -55,12 +56,16 @@ export default async function EditSessionPage({
     .order("slide_index");
 
   return (
-    <SessionBuilder
-      sessionId={session.session_id}
-      sessionTitle={session.title}
-      sessionDescription={session.description || ""}
-      userId={user.id}
-      initialPrompts={(prompts as PromptRow[]) ?? []}
+    <LiveTeacherView
+      session={{
+        session_id: session.session_id,
+        title: session.title,
+        description: session.description ?? "",
+        status: session.status,
+        join_code: session.join_code,
+        current_prompt: session.current_prompt,
+      }}
+      prompts={(prompts as PromptRow[]) ?? []}
     />
   );
 }
