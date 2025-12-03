@@ -14,6 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -48,6 +50,14 @@ type SessionInfo = {
   current_prompt: number | null;
 };
 
+type ChatMessage = {
+  message_id: number;
+  body: string;
+  user_id: string;
+  display_name: string;
+  created_at: string;
+};
+
 type BroadcastEvent =
   | {
       event: "prompt_changed";
@@ -76,6 +86,7 @@ export default function LiveTeacherView({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const chatChannelRef = useRef<RealtimeChannel | null>(null);
   const [prompts, setPrompts] = useState<PromptRow[]>(initialPrompts);
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(
     session.current_prompt ?? initialPrompts[0]?.prompt_id ?? null,
@@ -90,6 +101,8 @@ export default function LiveTeacherView({
   const [isUpdating, setIsUpdating] = useState(false);
   const [answers, setAnswers] = useState<AnswerRow[]>([]);
   const [answersLoading, setAnswersLoading] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
   const profileCacheRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
@@ -254,6 +267,54 @@ export default function LiveTeacherView({
     }
   };
 
+  // Chat: fetch and subscribe via broadcast
+  useEffect(() => {
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("message_id, body, user_id, created_at, profiles(display_name)")
+        .eq("session_id", session.session_id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) return;
+      const normalized =
+        data?.map((row: any) => ({
+          message_id: row.message_id,
+          body: row.body,
+          user_id: row.user_id,
+          display_name: row.profiles?.display_name || "User",
+          created_at: row.created_at,
+        })) ?? [];
+      setMessages(normalized);
+    };
+
+    loadMessages();
+
+    const channel = supabase
+      .channel(`chat-${session.session_id}`, {
+        config: { broadcast: { self: true } },
+      })
+      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+        const msg = payload as ChatMessage;
+        setMessages((prev) => {
+          if (prev.some((m) => m.message_id === msg.message_id)) {
+            return prev;
+          }
+          return [msg, ...prev];
+        });
+      })
+      .subscribe();
+
+    chatChannelRef.current = channel;
+
+    return () => {
+      if (chatChannelRef.current) {
+        supabase.removeChannel(chatChannelRef.current);
+        chatChannelRef.current = null;
+      }
+    };
+  }, [session.session_id, supabase]);
+
   const broadcast = async (event: BroadcastEvent) => {
     const channel = channelRef.current;
     if (!channel) return;
@@ -374,6 +435,38 @@ export default function LiveTeacherView({
     }
   };
 
+  const sendMessage = async () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    setChatInput("");
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        body: text,
+        session_id: session.session_id,
+      })
+      .select();
+    if (error) {
+      toast.error("Could not send message.");
+      return;
+    }
+    // Broadcast the new message
+    if (data && data[0] && chatChannelRef.current) {
+      const newMessage: ChatMessage = {
+        message_id: data[0].message_id,
+        body: data[0].body,
+        user_id: data[0].user_id,
+        display_name: "Teacher",
+        created_at: data[0].created_at,
+      };
+      chatChannelRef.current.send({
+        type: "broadcast",
+        event: "new_message",
+        payload: newMessage,
+      });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-4 py-10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -411,9 +504,9 @@ export default function LiveTeacherView({
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[360px,1fr]">
+        <div className="grid gap-4 lg:grid-cols-[300px,1fr,320px]">
           <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-base">Prompts</CardTitle>
               <Badge variant={channelReady ? "default" : "secondary"}>
                 {channelReady ? "Realtime on" : "Connecting"}
@@ -425,7 +518,7 @@ export default function LiveTeacherView({
                   No prompts yet. Add some in the editor.
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                   {prompts.map((prompt) => {
                     const isCurrent = prompt.prompt_id === currentPromptId;
                     const isSelected = prompt.prompt_id === selectedPromptId;
@@ -531,6 +624,64 @@ export default function LiveTeacherView({
                   Select a prompt from the list to control it.
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Chat</CardTitle>
+              <CardDescription>
+                Communicate with students in real-time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex h-[600px] flex-col gap-3">
+              <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border bg-white/70 p-2 dark:bg-slate-900/60">
+                {messages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No messages yet.
+                  </p>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg.message_id}
+                      className="rounded-lg bg-muted px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold">{msg.display_name}</span>
+                        <span className="text-[11px] opacity-70">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap">{msg.body}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="teacher-chat" className="text-xs">
+                  Message
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="teacher-chat"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Type a message"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                  />
+                  <Button onClick={sendMessage} type="button">
+                    Send
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
