@@ -35,4 +35,4 @@ Post-COVID classrooms need hybrid-ready, tech-driven engagement tools. Teachers 
 
 ## Branding
 
-Lumo’s branding centers on a glowing pulse icon that changes color with engagement levels, symbolizing energy and inclusivity in the classroom.
+Lumo’s branding centers on a glowing pulse icon that changes color with engagement levels, symbolizing energy and inclusivity in the classroom. So much fun!
