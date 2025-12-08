@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import LeaveSessionButton from "./leave-button";
@@ -47,6 +48,7 @@ type ChatMessage = {
   body: string;
   user_id: string;
   display_name: string;
+  avatar: string | null;
   created_at: string;
 };
 
@@ -54,7 +56,7 @@ type PresenceUser = { user_id: string; display_name: string };
 
 type Props = {
   session: SessionInfo;
-  user: { id: string; name: string };
+  user: { id: string; name: string; avatar: string | null };
   initialPrompt: PromptData | null;
 };
 
@@ -66,6 +68,7 @@ export default function StudentLiveView({
   const supabase = useMemo(() => createClient(), []);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const presenceRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>(
     session.status,
@@ -171,12 +174,12 @@ export default function StudentLiveView({
     };
   }, [session.session_id, supabase, user.id, user.name]);
 
-  // Live chat: fetch and subscribe
+  // Live chat: fetch and subscribe via broadcast
   useEffect(() => {
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("message_id, body, user_id, created_at, profiles(display_name)")
+        .select("message_id, body, user_id, created_at, profiles(display_name, avatar)")
         .eq("session_id", session.session_id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -187,6 +190,7 @@ export default function StudentLiveView({
           body: row.body,
           user_id: row.user_id,
           display_name: row.profiles?.display_name || "Student",
+          avatar: row.profiles?.avatar || null,
           created_at: row.created_at,
         })) ?? [];
       setMessages(normalized);
@@ -194,37 +198,30 @@ export default function StudentLiveView({
 
     loadMessages();
 
+    // Use broadcast channel for instant message updates (doesn't require DB realtime enabled)
     const channel = supabase
-      .channel(`messages-${session.session_id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `session_id=eq.${session.session_id}`,
-        },
-        (payload) => {
-          const row = payload.new as any;
-          setMessages((prev) => [
-            {
-              message_id: row.message_id,
-              body: row.body,
-              user_id: row.user_id,
-              display_name:
-                row.profiles?.display_name ||
-                prev.find((m) => m.user_id === row.user_id)?.display_name ||
-                "Student",
-              created_at: row.created_at,
-            },
-            ...prev,
-          ]);
-        },
-      )
+      .channel(`chat-${session.session_id}`, {
+        config: { broadcast: { self: true } },
+      })
+      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+        const msg = payload as ChatMessage;
+        setMessages((prev) => {
+          // Prevent duplicates
+          if (prev.some((m) => m.message_id === msg.message_id)) {
+            return prev;
+          }
+          return [msg, ...prev];
+        });
+      })
       .subscribe();
 
+    chatChannelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (chatChannelRef.current) {
+        supabase.removeChannel(chatChannelRef.current);
+        chatChannelRef.current = null;
+      }
     };
   }, [session.session_id, supabase]);
 
@@ -305,13 +302,30 @@ export default function StudentLiveView({
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
-    const { error } = await supabase.from("messages").insert({
+    const { data, error } = await supabase.from("messages").insert({
       body: text,
       session_id: session.session_id,
       user_id: user.id,
-    });
+    }).select();
     if (error) {
       toast.error("Could not send message.");
+    } else {
+      // Broadcast the new message to all connected clients
+      if (data && data[0] && chatChannelRef.current) {
+        const newMessage: ChatMessage = {
+          message_id: data[0].message_id,
+          body: data[0].body,
+          user_id: data[0].user_id,
+          display_name: user.name,
+          avatar: user.avatar,
+          created_at: data[0].created_at,
+        };
+        chatChannelRef.current.send({
+          type: "broadcast",
+          event: "new_message",
+          payload: newMessage,
+        });
+      }
     }
   };
 
@@ -354,9 +368,9 @@ export default function StudentLiveView({
             <CardContent className="flex h-[520px] flex-col gap-3">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex -space-x-2">
-                  {presence.slice(0, 5).map((p) => (
+                  {presence.slice(0, 5).map((p, idx) => (
                     <div
-                      key={p.user_id}
+                      key={`${p.user_id}-${idx}`}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
                     >
                       {p.display_name.slice(0, 2).toUpperCase()}
@@ -377,22 +391,33 @@ export default function StudentLiveView({
                     <div
                       key={msg.message_id}
                       className={cn(
-                        "rounded-lg px-3 py-2 text-sm",
+                        "rounded-lg px-3 py-2 text-sm flex gap-2",
                         msg.user_id === user.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground",
                       )}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">{msg.display_name}</span>
-                        <span className="text-[11px] opacity-70">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                      <Avatar className="h-8 w-8 shrink-0">
+                        {msg.avatar ? (
+                          <AvatarImage src={msg.avatar} alt={msg.display_name} />
+                        ) : (
+                          <AvatarFallback>
+                            {msg.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">{msg.display_name}</span>
+                          <span className="text-[11px] opacity-70">
+                            {new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap break-words">{msg.body}</p>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap">{msg.body}</p>
                     </div>
                   ))
                 )}
