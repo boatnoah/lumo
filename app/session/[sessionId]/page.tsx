@@ -43,7 +43,7 @@ export default async function StudentSessionPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, role")
+    .select("display_name, role, avatar")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -85,7 +85,11 @@ export default async function StudentSessionPage({
         status: session.status,
         current_prompt: session.current_prompt,
       }}
-      user={{ id: user.id, name: profile?.display_name || "You" }}
+      user={{ 
+        id: user.id, 
+        name: profile?.display_name || "You",
+        avatar: profile?.avatar || null 
+      }}
       initialPrompt={prompt}
     />
   );

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ type ChatMessage = {
   body: string;
   user_id: string;
   display_name: string;
+  avatar: string | null;
   created_at: string;
 };
 
@@ -79,9 +81,11 @@ type BroadcastEvent =
 
 export default function LiveTeacherView({
   session,
+  user,
   prompts: initialPrompts,
 }: {
   session: SessionInfo;
+  user: { id: string; name: string; avatar: string | null };
   prompts: PromptRow[];
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -272,7 +276,7 @@ export default function LiveTeacherView({
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("message_id, body, user_id, created_at, profiles(display_name)")
+        .select("message_id, body, user_id, created_at, profiles(display_name, avatar)")
         .eq("session_id", session.session_id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -283,6 +287,7 @@ export default function LiveTeacherView({
           body: row.body,
           user_id: row.user_id,
           display_name: row.profiles?.display_name || "User",
+          avatar: row.profiles?.avatar || null,
           created_at: row.created_at,
         })) ?? [];
       setMessages(normalized);
@@ -439,24 +444,29 @@ export default function LiveTeacherView({
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
+    
     const { data, error } = await supabase
       .from("messages")
       .insert({
         body: text,
         session_id: session.session_id,
+        user_id: user.id,
       })
       .select();
+
     if (error) {
       toast.error("Could not send message.");
       return;
     }
+    
     // Broadcast the new message
     if (data && data[0] && chatChannelRef.current) {
       const newMessage: ChatMessage = {
         message_id: data[0].message_id,
         body: data[0].body,
         user_id: data[0].user_id,
-        display_name: "Teacher",
+        display_name: user.name,
+        avatar: user.avatar,
         created_at: data[0].created_at,
       };
       chatChannelRef.current.send({
@@ -644,18 +654,29 @@ export default function LiveTeacherView({
                   messages.map((msg) => (
                     <div
                       key={msg.message_id}
-                      className="rounded-lg bg-muted px-3 py-2 text-sm"
+                      className="rounded-lg bg-muted px-3 py-2 text-sm flex gap-2"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">{msg.display_name}</span>
-                        <span className="text-[11px] opacity-70">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                      <Avatar className="h-8 w-8 shrink-0">
+                        {msg.avatar ? (
+                          <AvatarImage src={msg.avatar} alt={msg.display_name} />
+                        ) : (
+                          <AvatarFallback>
+                            {msg.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">{msg.display_name}</span>
+                          <span className="text-[11px] opacity-70">
+                            {new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap break-words">{msg.body}</p>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap">{msg.body}</p>
                     </div>
                   ))
                 )}

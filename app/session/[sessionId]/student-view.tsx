@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import LeaveSessionButton from "./leave-button";
@@ -47,6 +48,7 @@ type ChatMessage = {
   body: string;
   user_id: string;
   display_name: string;
+  avatar: string | null;
   created_at: string;
 };
 
@@ -54,7 +56,7 @@ type PresenceUser = { user_id: string; display_name: string };
 
 type Props = {
   session: SessionInfo;
-  user: { id: string; name: string };
+  user: { id: string; name: string; avatar: string | null };
   initialPrompt: PromptData | null;
 };
 
@@ -177,7 +179,7 @@ export default function StudentLiveView({
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("message_id, body, user_id, created_at, profiles(display_name)")
+        .select("message_id, body, user_id, created_at, profiles(display_name, avatar)")
         .eq("session_id", session.session_id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -188,6 +190,7 @@ export default function StudentLiveView({
           body: row.body,
           user_id: row.user_id,
           display_name: row.profiles?.display_name || "Student",
+          avatar: row.profiles?.avatar || null,
           created_at: row.created_at,
         })) ?? [];
       setMessages(normalized);
@@ -314,6 +317,7 @@ export default function StudentLiveView({
           body: data[0].body,
           user_id: data[0].user_id,
           display_name: user.name,
+          avatar: user.avatar,
           created_at: data[0].created_at,
         };
         chatChannelRef.current.send({
@@ -387,22 +391,33 @@ export default function StudentLiveView({
                     <div
                       key={msg.message_id}
                       className={cn(
-                        "rounded-lg px-3 py-2 text-sm",
+                        "rounded-lg px-3 py-2 text-sm flex gap-2",
                         msg.user_id === user.id
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground",
                       )}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">{msg.display_name}</span>
-                        <span className="text-[11px] opacity-70">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                      <Avatar className="h-8 w-8 shrink-0">
+                        {msg.avatar ? (
+                          <AvatarImage src={msg.avatar} alt={msg.display_name} />
+                        ) : (
+                          <AvatarFallback>
+                            {msg.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">{msg.display_name}</span>
+                          <span className="text-[11px] opacity-70">
+                            {new Date(msg.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap break-words">{msg.body}</p>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap">{msg.body}</p>
                     </div>
                   ))
                 )}
