@@ -90,8 +90,8 @@ export const navConfig: Record<
 };
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const role = user.role as Role;
-  const data = navConfig[role];
+  const role = (user.role as Role) || "student";
+  const data = navConfig[role] || navConfig.student;
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
