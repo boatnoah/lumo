@@ -35,6 +35,12 @@ import {
   XIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type {
+  DocumentInitParameters,
+  PDFDocumentProxy,
+  RenderParameters,
+} from "pdfjs-dist/types/src/display/api";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -109,6 +115,10 @@ type Props = {
 };
 
 const STORAGE_BUCKET = "slides";
+// Slides stay crisp at 120 DPI without ballooning file sizes.
+const RENDER_DPI = 120;
+const PDF_RENDER_SCALE = RENDER_DPI / 72; // PDF default resolution is 72 DPI.
+const MAX_PDF_PAGES = 50;
 
 export default function SessionBuilder({
   sessionId,
@@ -327,25 +337,17 @@ export default function SessionBuilder({
     setUploadError(null);
     setUploading(true);
     try {
-      const form = new FormData();
-      form.set("session_id", String(sessionId));
-      form.set("file", file);
-
-      const res = await fetch("/api/uploads", {
-        method: "POST",
-        body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setUploadError(json?.error ?? "Upload failed");
+      const { images, totalPages } = await renderPdfClientSide(file);
+      if (totalPages > MAX_PDF_PAGES) {
+        setUploadError(
+          `PDF has ${totalPages} pages; max allowed is ${MAX_PDF_PAGES}`,
+        );
         return;
       }
 
-      const additions =
-        (json.images as { page: number; publicUrl: string; path: string }[]) ||
-        [];
+      const uploads = await uploadRenderedImages(images, sessionId, supabase);
 
-      const newPrompts = additions.map((img, idx) =>
+      const newPrompts = uploads.map((img, idx) =>
         createSlidePromptDraft(
           prompts.length + idx,
           userId,
@@ -1049,6 +1051,119 @@ function createSlidePromptDraft(
     released: false,
     created_by: userId,
   };
+}
+
+type RenderedPage = {
+  page: number;
+  blob: Blob;
+};
+
+async function renderPdfClientSide(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfData = new Uint8Array(arrayBuffer);
+  if (!isPdfFile(pdfData)) {
+    throw new Error("Uploaded file does not look like a PDF");
+  }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = getPdfWorkerSrc(pdfjsLib.version);
+  const params: DocumentInitParameters = {
+    data: pdfData,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+  };
+
+  const task = pdfjsLib.getDocument(params);
+  const pdf = await task.promise;
+
+  const images: RenderedPage[] = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const rendered = await renderPageToPng(page);
+    images.push({ page: pageNumber, blob: rendered });
+  }
+
+  await pdf.destroy();
+  return { images, totalPages: images.length };
+}
+
+function isPdfFile(bytes: Uint8Array) {
+  return Buffer.from(bytes.subarray(0, 4)).toString("utf8") === "%PDF";
+}
+
+async function renderPageToPng(
+  page: PDFDocumentProxy["getPage"] extends (...args: any) => infer R
+    ? R extends Promise<infer Page>
+      ? Page
+      : never
+    : never,
+) {
+  const viewport = page.getViewport({ scale: PDF_RENDER_SCALE });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    throw new Error("Could not create canvas context");
+  }
+
+  const renderContext: RenderParameters = {
+    canvasContext: context as unknown as CanvasRenderingContext2D,
+    viewport,
+    intent: "print",
+  };
+
+  await page.render(renderContext).promise;
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to render page"));
+      },
+      "image/png",
+      1.0,
+    );
+  });
+
+  return blob;
+}
+
+async function uploadRenderedImages(
+  images: RenderedPage[],
+  sessionId: number,
+  supabase: ReturnType<typeof createClient>,
+) {
+  const uploads = [];
+
+  for (const image of images) {
+    const storagePath = `${sessionId}/${crypto.randomUUID()}-page-${image.page}.png`;
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(storagePath, image.blob, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+
+    uploads.push({
+      page: image.page,
+      path: storagePath,
+      publicUrl,
+    });
+  }
+
+  return uploads;
+}
+
+function getPdfWorkerSrc(version: string) {
+  const v = version || "latest";
+  return `https://cdn.jsdelivr.net/npm/pdfjs-dist@${v}/legacy/build/pdf.worker.min.mjs`;
 }
 
 function extractPathFromPublicUrl(url: string) {
