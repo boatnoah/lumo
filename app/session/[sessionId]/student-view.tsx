@@ -256,7 +256,21 @@ export default function StudentLiveView({
           if (record.status) {
             setSessionStatus(record.status);
           }
-          if (record.current_prompt !== currentPrompt?.prompt_id) {
+          if (
+            record.current_prompt &&
+            record.current_prompt !== currentPrompt?.prompt_id
+          ) {
+            loadPrompt(record.current_prompt, supabase).then((next) => {
+              if (next) {
+                setCurrentPrompt(next);
+                setIsOpen(next.is_open);
+                setSelectedOption(null);
+                setTextAnswer("");
+                setSubmitted(false);
+              }
+            });
+          }
+          if (record.current_prompt === null) {
             setCurrentPrompt(null);
           }
         },
@@ -635,4 +649,29 @@ function PromptDisplay({ prompt }: { prompt: PromptData }) {
       Unsupported prompt type.
     </div>
   );
+}
+
+async function loadPrompt(
+  promptId: number,
+  supabase: ReturnType<typeof createClient>,
+): Promise<PromptData | null> {
+  const { data, error } = await supabase
+    .from("prompts")
+    .select(
+      "prompt_id, session_id, slide_index, kind, content, is_open, released",
+    )
+    .eq("prompt_id", promptId)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    prompt_id: data.prompt_id,
+    session_id: data.session_id,
+    slide_index: data.slide_index,
+    kind: data.kind as PromptKind,
+    content: data.content as PromptContent,
+    is_open: data.is_open ?? false,
+    released: data.released ?? false,
+  };
 }
