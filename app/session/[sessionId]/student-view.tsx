@@ -19,17 +19,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import type {
+  McqContent,
+  PromptContent,
+  PromptKind,
+  SlideContent,
+  ShortTextContent,
+  LongTextContent,
+} from "@/types/prompts";
 import LeaveSessionButton from "./leave-button";
 
 type SessionStatus = "draft" | "live" | "ended";
-type PromptKind = "mcq" | "short_text" | "long_text" | "slide";
 
 type PromptData = {
   prompt_id: number;
   session_id: number;
   slide_index: number;
   kind: PromptKind;
-  content: any;
+  content: PromptContent;
   is_open: boolean;
   released: boolean;
 };
@@ -53,6 +60,10 @@ type ChatMessage = {
 };
 
 type PresenceUser = { user_id: string; display_name: string };
+
+type MessageRow = ChatMessage & {
+  profiles?: { display_name?: string | null; avatar?: string | null } | null;
+};
 
 type Props = {
   session: SessionInfo;
@@ -99,9 +110,9 @@ export default function StudentLiveView({
           is_open: boolean;
           slide_index: number;
           kind: PromptKind;
-          content: any;
+          content: PromptContent;
         };
-        setCurrentPrompt((prev) => ({
+        setCurrentPrompt(() => ({
           prompt_id: data.prompt_id,
           session_id: session.session_id,
           slide_index: data.slide_index,
@@ -184,15 +195,15 @@ export default function StudentLiveView({
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) return;
-      const normalized =
-        data?.map((row: any) => ({
-          message_id: row.message_id,
-          body: row.body,
-          user_id: row.user_id,
-          display_name: row.profiles?.display_name || "Student",
-          avatar: row.profiles?.avatar || null,
-          created_at: row.created_at,
-        })) ?? [];
+      const rows = (data ?? []) as unknown as MessageRow[];
+      const normalized = rows.map((row) => ({
+        message_id: row.message_id,
+        body: row.body,
+        user_id: row.user_id,
+        display_name: row.profiles?.display_name || "Student",
+        avatar: row.profiles?.avatar || null,
+        created_at: row.created_at,
+      }));
       setMessages(normalized);
     };
 
@@ -238,8 +249,13 @@ export default function StudentLiveView({
           filter: `session_id=eq.${session.session_id}`,
         },
         (payload) => {
-          const record = payload.new as any;
-          setSessionStatus(record.status);
+          const record = payload.new as {
+            status?: SessionStatus;
+            current_prompt?: number | null;
+          };
+          if (record.status) {
+            setSessionStatus(record.status);
+          }
           if (record.current_prompt !== currentPrompt?.prompt_id) {
             setCurrentPrompt(null);
           }
@@ -484,7 +500,9 @@ export default function StudentLiveView({
                       />
                     ) : (
                       <div className="space-y-2">
-                        {(currentPrompt.content?.options ?? []).map(
+                        {((currentPrompt.content as McqContent | undefined)
+                          ?.options ?? []
+                        ).map(
                           (option: string, idx: number) => (
                             <label
                               key={idx}
@@ -551,12 +569,13 @@ export default function StudentLiveView({
 
 function PromptDisplay({ prompt }: { prompt: PromptData }) {
   if (prompt.kind === "slide") {
-    const imageUrl = prompt.content?.imageUrl;
+    const imageUrl = (prompt.content as SlideContent | undefined)?.imageUrl;
     return (
       <div className="space-y-2">
         <Badge variant="outline">Slide</Badge>
         {imageUrl ? (
           <div className="overflow-hidden rounded-lg border bg-muted/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={`Slide ${prompt.slide_index + 1}`}
@@ -573,38 +592,39 @@ function PromptDisplay({ prompt }: { prompt: PromptData }) {
   }
 
   if (prompt.kind === "mcq") {
+    const content = prompt.content as McqContent;
     return (
       <div className="space-y-2">
         <Badge variant="outline">Multiple choice</Badge>
         <p className="text-lg font-semibold">
-          {prompt.content?.question || "Question"}
+          {content.question || "Question"}
         </p>
       </div>
     );
   }
 
   if (prompt.kind === "short_text") {
+    const content = prompt.content as ShortTextContent;
     return (
       <div className="space-y-2">
         <Badge variant="outline">Short answer</Badge>
         <p className="text-lg font-semibold">
-          {prompt.content?.prompt || "Short answer prompt"}
+          {content.prompt || "Short answer prompt"}
         </p>
       </div>
     );
   }
 
   if (prompt.kind === "long_text") {
+    const content = prompt.content as LongTextContent;
     return (
       <div className="space-y-2">
         <Badge variant="outline">Long answer</Badge>
         <p className="text-lg font-semibold">
-          {prompt.content?.prompt || "Long answer prompt"}
+          {content.prompt || "Long answer prompt"}
         </p>
-        {prompt.content?.rubricHint ? (
-          <p className="text-sm text-muted-foreground">
-            {prompt.content.rubricHint}
-          </p>
+        {content.rubricHint ? (
+          <p className="text-sm text-muted-foreground">{content.rubricHint}</p>
         ) : null}
       </div>
     );

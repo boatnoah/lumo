@@ -1,6 +1,6 @@
- "use client";
+"use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -18,6 +18,14 @@ import { Button } from "@/components/ui/button";
 const JOIN_CODE_PATTERN = /^\d{6}$/;
 
 export default function JoinSessionPage() {
+  return (
+    <Suspense fallback={<div className="px-4 py-12 text-center text-sm text-muted-foreground">Loading...</div>}>
+      <JoinSessionContent />
+    </Suspense>
+  );
+}
+
+function JoinSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const leftNotice = useMemo(

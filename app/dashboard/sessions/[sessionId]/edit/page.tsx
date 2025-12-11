@@ -16,9 +16,10 @@ type PromptRow = {
 export default async function EditSessionPage({
   params,
 }: {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }) {
-  const sessionId = Number(params.sessionId);
+  const { sessionId: sessionIdParam } = await params;
+  const sessionId = Number(sessionIdParam);
   if (!Number.isFinite(sessionId)) {
     notFound();
   }

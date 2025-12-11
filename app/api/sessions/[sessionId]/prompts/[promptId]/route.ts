@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { sessionId: string; promptId: string } },
+  request: NextRequest,
+  context: { params: Promise<{ sessionId: string; promptId: string }> },
 ) {
   const supabase = await createClient();
 
-  const sessionId = Number(params.sessionId);
-  const promptId = Number(params.promptId);
+  const { sessionId: sessionIdRaw, promptId: promptIdRaw } =
+    await context.params;
+  const sessionId = Number(sessionIdRaw);
+  const promptId = Number(promptIdRaw);
   if (!Number.isFinite(sessionId) || !Number.isFinite(promptId)) {
     return NextResponse.json(
       { error: "That session or prompt id looks invalid." },
