@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -9,12 +9,13 @@ function isValidStatus(status: unknown): status is SessionStatus {
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { sessionId: string } },
+  request: NextRequest,
+  context: { params: Promise<{ sessionId: string }> },
 ) {
   const supabase = await createClient();
 
-  const sessionId = Number(params.sessionId);
+  const { sessionId: sessionIdRaw } = await context.params;
+  const sessionId = Number(sessionIdRaw);
   if (!Number.isFinite(sessionId)) {
     return NextResponse.json(
       { error: "That session id looks invalid." },

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Circle,
   ClipboardListIcon,
@@ -13,6 +14,7 @@ import {
   SearchIcon,
   SettingsIcon,
   UsersIcon,
+  type LucideIcon,
 } from "lucide-react";
 
 import { NavDocuments } from "@/components/nav-documents";
@@ -44,9 +46,9 @@ type Role = "teacher" | "student";
 export const navConfig: Record<
   Role,
   {
-    navMain: { title: string; url: string; icon: any }[];
-    navSecondary: { title: string; url: string; icon: any }[];
-    documents: { name: string; url: string; icon: any }[];
+    navMain: { title: string; url: string; icon: LucideIcon }[];
+    navSecondary: { title: string; url: string; icon: LucideIcon }[];
+    documents: { name: string; url: string; icon: LucideIcon }[];
   }
 > = {
   teacher: {
@@ -101,10 +103,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/">
+              <Link href="/">
                 <Circle className="h-5 w-5 animate-pulse" />
                 <span className="text-base font-semibold">Lumo</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

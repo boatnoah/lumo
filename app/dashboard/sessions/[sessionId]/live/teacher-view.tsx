@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -20,9 +20,16 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import type {
+  McqContent,
+  PromptContent,
+  PromptKind,
+  ShortTextContent,
+  SlideContent,
+  LongTextContent,
+} from "@/types/prompts";
 
 type SessionStatus = "draft" | "live" | "ended";
-type PromptKind = "mcq" | "short_text" | "long_text" | "slide";
 type AnswerRow = {
   answer_id: number;
   user_id: string;
@@ -37,7 +44,7 @@ type PromptRow = {
   prompt_id: number;
   slide_index: number;
   kind: PromptKind;
-  content: any;
+  content: PromptContent;
   is_open: boolean;
   released: boolean;
 };
@@ -60,6 +67,14 @@ type ChatMessage = {
   created_at: string;
 };
 
+type MessageRow = ChatMessage & {
+  profiles?: { display_name?: string | null; avatar?: string | null } | null;
+};
+
+type AnswerRowWithProfile = AnswerRow & {
+  profiles?: { display_name?: string | null } | null;
+};
+
 type BroadcastEvent =
   | {
       event: "prompt_changed";
@@ -68,7 +83,7 @@ type BroadcastEvent =
         is_open: boolean;
         slide_index: number;
         kind: PromptKind;
-        content: any;
+        content: PromptContent;
       };
     }
   | {
@@ -119,7 +134,10 @@ export default function LiveTeacherView({
 
     channel
       .on("broadcast", { event: "prompt_changed" }, ({ payload }) => {
-        const data = payload as BroadcastEvent["payload"];
+        const data = payload as Extract<
+          BroadcastEvent,
+          { event: "prompt_changed" }
+        >["payload"];
         setCurrentPromptId(data.prompt_id);
         setPrompts((prev) =>
           prev.map((p) =>
@@ -134,7 +152,10 @@ export default function LiveTeacherView({
         );
       })
       .on("broadcast", { event: "prompt_open_state" }, ({ payload }) => {
-        const data = payload as BroadcastEvent["payload"];
+        const data = payload as Extract<
+          BroadcastEvent,
+          { event: "prompt_open_state" }
+        >["payload"];
         setPrompts((prev) =>
           prev.map((p) =>
             p.prompt_id === data.prompt_id ? { ...p, is_open: data.is_open } : p,
@@ -160,13 +181,51 @@ export default function LiveTeacherView({
   const currentPrompt =
     prompts.find((p) => p.prompt_id === currentPromptId) ?? null;
 
+  const fetchAnswers = useCallback(
+    async (promptId: number) => {
+      setAnswersLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("answers")
+          .select(
+            "answer_id, user_id, prompt_id, choice_index, text_answer, created_at, profiles!inner(display_name)",
+          )
+          .eq("prompt_id", promptId)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as AnswerRowWithProfile[];
+        const normalized = rows.map((row) => {
+          const displayName = row.profiles?.display_name || "Student";
+          profileCacheRef.current[row.user_id] = displayName;
+          return {
+            answer_id: row.answer_id,
+            user_id: row.user_id,
+            prompt_id: row.prompt_id,
+            choice_index: row.choice_index,
+            text_answer: row.text_answer,
+            created_at: row.created_at,
+            display_name: displayName,
+          };
+        });
+        setAnswers(normalized);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load answers.",
+        );
+      } finally {
+        setAnswersLoading(false);
+      }
+    },
+    [supabase],
+  );
+
   useEffect(() => {
     if (!currentPromptId) {
       setAnswers([]);
       return;
     }
     fetchAnswers(currentPromptId);
-  }, [currentPromptId]);
+  }, [currentPromptId, fetchAnswers]);
 
   useEffect(() => {
     if (!currentPromptId) return;
@@ -181,8 +240,13 @@ export default function LiveTeacherView({
           filter: `prompt_id=eq.${currentPromptId}`,
         },
         async (payload) => {
-          const record = (payload.new || payload.old) as any;
-          if (!record?.answer_id) return;
+          const record = (payload.new || payload.old) as Partial<AnswerRow>;
+          if (
+            !record?.answer_id ||
+            !record.user_id ||
+            typeof record.prompt_id !== "number"
+          )
+            return;
           // Find a display name if we have it cached; otherwise fetch once.
           let display_name =
             profileCacheRef.current[record.user_id] || "Student";
@@ -202,13 +266,19 @@ export default function LiveTeacherView({
             const existingIndex = prev.findIndex(
               (a) => a.answer_id === record.answer_id,
             );
-            const nextAnswer = {
-              answer_id: record.answer_id,
-              user_id: record.user_id,
-              prompt_id: record.prompt_id,
-              choice_index: record.choice_index,
-              text_answer: record.text_answer,
-              created_at: record.created_at,
+            const nextAnswer: AnswerRow = {
+              answer_id: record.answer_id!,
+              user_id: record.user_id!,
+              prompt_id: record.prompt_id as number,
+              choice_index:
+                typeof record.choice_index === "number"
+                  ? record.choice_index
+                  : null,
+              text_answer:
+                typeof record.text_answer === "string"
+                  ? record.text_answer
+                  : null,
+              created_at: record.created_at ?? new Date().toISOString(),
               display_name,
             };
 
@@ -236,41 +306,6 @@ export default function LiveTeacherView({
     };
   }, [currentPromptId, session.session_id, supabase]);
 
-  const fetchAnswers = async (promptId: number) => {
-    setAnswersLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("answers")
-        .select(
-          "answer_id, user_id, prompt_id, choice_index, text_answer, created_at, profiles!inner(display_name)",
-        )
-        .eq("prompt_id", promptId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const normalized =
-        data?.map((row: any) => {
-          const displayName = row.profiles?.display_name || "Student";
-          profileCacheRef.current[row.user_id] = displayName;
-          return {
-            answer_id: row.answer_id,
-            user_id: row.user_id,
-            prompt_id: row.prompt_id,
-            choice_index: row.choice_index,
-            text_answer: row.text_answer,
-            created_at: row.created_at,
-            display_name: displayName,
-          };
-        }) ?? [];
-      setAnswers(normalized);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load answers.",
-      );
-    } finally {
-      setAnswersLoading(false);
-    }
-  };
-
   // Chat: fetch and subscribe via broadcast
   useEffect(() => {
     const loadMessages = async () => {
@@ -281,15 +316,15 @@ export default function LiveTeacherView({
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) return;
-      const normalized =
-        data?.map((row: any) => ({
-          message_id: row.message_id,
-          body: row.body,
-          user_id: row.user_id,
-          display_name: row.profiles?.display_name || "User",
-          avatar: row.profiles?.avatar || null,
-          created_at: row.created_at,
-        })) ?? [];
+      const rows = (data ?? []) as unknown as MessageRow[];
+      const normalized = rows.map((row) => ({
+        message_id: row.message_id,
+        body: row.body,
+        user_id: row.user_id,
+        display_name: row.profiles?.display_name || "User",
+        avatar: row.profiles?.avatar || null,
+        created_at: row.created_at,
+      }));
       setMessages(normalized);
     };
 
@@ -713,7 +748,7 @@ export default function LiveTeacherView({
 
 function PromptPreview({ prompt }: { prompt: PromptRow }) {
   if (prompt.kind === "slide") {
-    const imageUrl = prompt.content?.imageUrl;
+    const imageUrl = (prompt.content as SlideContent | undefined)?.imageUrl;
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -724,6 +759,7 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
         </div>
         {imageUrl ? (
           <div className="overflow-hidden rounded-lg border bg-muted/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={`Slide ${prompt.slide_index + 1}`}
@@ -740,6 +776,7 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
   }
 
   if (prompt.kind === "mcq") {
+    const content = prompt.content as McqContent;
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
@@ -749,25 +786,24 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
           </span>
         </div>
         <p className="text-lg font-semibold">
-          {prompt.content?.question || "Question"}
+          {content.question || "Question"}
         </p>
         <ul className="space-y-2">
-          {(prompt.content?.options ?? []).map(
-            (option: string, idx: number) => (
-              <li
-                key={idx}
-                className="rounded-md border px-3 py-2 text-sm text-muted-foreground"
-              >
-                {String.fromCharCode(65 + idx)}. {option}
-              </li>
-            ),
-          )}
+          {(content.options ?? []).map((option: string, idx: number) => (
+            <li
+              key={idx}
+              className="rounded-md border px-3 py-2 text-sm text-muted-foreground"
+            >
+              {String.fromCharCode(65 + idx)}. {option}
+            </li>
+          ))}
         </ul>
       </div>
     );
   }
 
   if (prompt.kind === "short_text") {
+    const content = prompt.content as ShortTextContent;
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -777,13 +813,14 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
           </span>
         </div>
         <p className="text-lg font-semibold">
-          {prompt.content?.prompt || "Short answer prompt"}
+          {content.prompt || "Short answer prompt"}
         </p>
       </div>
     );
   }
 
   if (prompt.kind === "long_text") {
+    const content = prompt.content as LongTextContent;
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -793,12 +830,10 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
           </span>
         </div>
         <p className="text-lg font-semibold">
-          {prompt.content?.prompt || "Long answer prompt"}
+          {content.prompt || "Long answer prompt"}
         </p>
-        {prompt.content?.rubricHint ? (
-          <p className="text-sm text-muted-foreground">
-            Hint: {prompt.content.rubricHint}
-          </p>
+        {content.rubricHint ? (
+          <p className="text-sm text-muted-foreground">Hint: {content.rubricHint}</p>
         ) : null}
       </div>
     );

@@ -1,16 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
 const JOIN_CODE_PATTERN = /^\d{6}$/;
 
 export async function POST(
-  _request: Request,
-  { params }: { params: { joinCode: string } },
+  _request: NextRequest,
+  context: { params: Promise<{ joinCode: string }> },
 ) {
   const supabase = await createClient();
 
-  const joinCode = (params.joinCode || "").trim();
+  const { joinCode: joinCodeRaw } = await context.params;
+  const joinCode = (joinCodeRaw || "").trim();
   if (!JOIN_CODE_PATTERN.test(joinCode)) {
     return NextResponse.json(
       { error: "That code format looks off." },

@@ -1,13 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import type { PromptContent, PromptKind } from "@/types/prompts";
 import LiveTeacherView from "./teacher-view";
 
 type PromptRow = {
   prompt_id: number;
   slide_index: number;
-  kind: "mcq" | "short_text" | "long_text" | "slide";
-  content: unknown;
+  kind: PromptKind;
+  content: PromptContent;
   is_open: boolean;
   released: boolean;
 };
@@ -15,9 +16,10 @@ type PromptRow = {
 export default async function LiveSessionPage({
   params,
 }: {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }) {
-  const sessionId = Number(params.sessionId);
+  const { sessionId: sessionIdParam } = await params;
+  const sessionId = Number(sessionIdParam);
   if (!Number.isFinite(sessionId)) {
     notFound();
   }
@@ -76,7 +78,12 @@ export default async function LiveSessionPage({
         name: profile?.display_name || "Teacher",
         avatar: profile?.avatar || null,
       }}
-      prompts={(prompts as PromptRow[]) ?? []}
+      prompts={
+        (prompts?.map((prompt) => ({
+          ...prompt,
+          content: (prompt as { content: PromptContent }).content,
+        })) as PromptRow[] | undefined) ?? []
+      }
     />
   );
 }

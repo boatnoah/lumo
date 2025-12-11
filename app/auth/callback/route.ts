@@ -40,7 +40,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.from("profiles").insert({
       user_id: user.id,
       display_name:
-        (user.user_metadata as any)?.full_name ??
+        (typeof user.user_metadata === "object" &&
+        user.user_metadata !== null &&
+        "full_name" in user.user_metadata
+          ? (user.user_metadata as { full_name?: string | null }).full_name
+          : null) ??
         user.email?.split("@")[0] ??
         "User",
       role: "pending",

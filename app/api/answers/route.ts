@@ -94,10 +94,7 @@ export async function POST(request: Request) {
   }
 
   if (!session) {
-    return NextResponse.json(
-      { error: "Session not found." },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 
   if (session.status !== "live") {
@@ -147,8 +144,7 @@ export async function POST(request: Request) {
     .insert({
       prompt_id: prompt.prompt_id,
       user_id: user.id,
-      choice_index:
-        prompt.kind === "mcq" ? (choice_index as number) : null,
+      choice_index: prompt.kind === "mcq" ? (choice_index as number) : null,
       text_answer: prompt.kind === "mcq" ? null : (text_answer as string),
     })
     .select("answer_id, created_at")
@@ -156,7 +152,7 @@ export async function POST(request: Request) {
 
   if (insertError || !answer) {
     return NextResponse.json(
-      { error: "Could not submit your answer right now." },
+      { error: "You have already submitted an answer for this prompt." },
       { status: 500 },
     );
   }

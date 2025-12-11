@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import type { PromptContent, PromptKind } from "@/types/prompts";
 import StudentLiveView from "./student-view";
 
 type SessionRow = {
@@ -16,8 +17,8 @@ type PromptRow = {
   prompt_id: number;
   session_id: number;
   slide_index: number;
-  kind: "mcq" | "short_text" | "long_text" | "slide";
-  content: any;
+  kind: PromptKind;
+  content: PromptContent;
   is_open: boolean;
   released: boolean;
 };
@@ -25,9 +26,10 @@ type PromptRow = {
 export default async function StudentSessionPage({
   params,
 }: {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }) {
-  const sessionId = Number(params.sessionId);
+  const { sessionId: sessionIdParam } = await params;
+  const sessionId = Number(sessionIdParam);
   if (!Number.isFinite(sessionId)) {
     redirect("/session");
   }

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import {
   DndContext,
   MouseSensor,
@@ -46,6 +52,7 @@ type McqContent = {
   question: string;
   options: string[];
   correctIndex: number | null;
+  shuffle?: boolean;
 };
 
 type ShortTextContent = {
@@ -123,7 +130,6 @@ export default function SessionBuilder({
     prompts[0]?.id ?? null,
   );
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [baselineIds, setBaselineIds] = useState<number[]>(
@@ -222,7 +228,6 @@ export default function SessionBuilder({
 
   const handleSave = async () => {
     setSaving(true);
-    setMessage(null);
     try {
       const ordered = prompts.map((p, idx) => ({ ...p, slide_index: idx }));
       const validationError = validatePrompts(ordered);
@@ -1062,14 +1067,19 @@ function extractPathFromPublicUrl(url: string) {
   }
 }
 
+type WindowWithAudioContext = Window & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
 function playChime(
-  ctxRef: React.MutableRefObject<AudioContext | null>,
+  ctxRef: MutableRefObject<AudioContext | null>,
   freq: number,
 ) {
   try {
     const Ctx =
       typeof window !== "undefined"
-        ? window.AudioContext || (window as any).webkitAudioContext
+        ? window.AudioContext ||
+          (window as WindowWithAudioContext).webkitAudioContext
         : null;
     if (!Ctx) return;
     if (!ctxRef.current) ctxRef.current = new Ctx();
