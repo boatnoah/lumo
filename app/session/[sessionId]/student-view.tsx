@@ -518,8 +518,7 @@ export default function StudentLiveView({
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         onClick={handleSubmitAnswer}
-                      disabled={!isOpen || submitting}
-                      disabled={!isOpen || submitting || submitted}
+                        disabled={!isOpen || submitting || submitted}
                       >
                         {submitting ? "Submitting..." : "Submit answer"}
                       </Button>
