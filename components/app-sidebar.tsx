@@ -53,7 +53,7 @@ export const navConfig: Record<
 > = {
   teacher: {
     navMain: [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+      { title: "Dashboard", url: "/dashboardv2", icon: LayoutDashboardIcon },
       { title: "Sessions", url: "/sessions", icon: ListIcon }, // view + manage
       { title: "New Session", url: "/sessions/new", icon: FolderIcon }, // create
       { title: "Students", url: "/students", icon: UsersIcon },
@@ -72,7 +72,7 @@ export const navConfig: Record<
 
   student: {
     navMain: [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+      { title: "Dashboard", url: "/dashboardv2", icon: LayoutDashboardIcon },
       { title: "Join Session", url: "/join", icon: ListIcon },
       { title: "My Sessions", url: "/sessions", icon: FolderIcon }, // view past + active
     ],

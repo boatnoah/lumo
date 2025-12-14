@@ -19,7 +19,13 @@ const JOIN_CODE_PATTERN = /^\d{6}$/;
 
 export default function JoinSessionPage() {
   return (
-    <Suspense fallback={<div className="px-4 py-12 text-center text-sm text-muted-foreground">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+          Loading...
+        </div>
+      }
+    >
       <JoinSessionContent />
     </Suspense>
   );
@@ -79,7 +85,7 @@ function JoinSessionContent() {
             <h1 className="text-3xl font-semibold">Enter your code</h1>
           </div>
           <Button asChild variant="ghost">
-            <Link href="/dashboard">Back to dashboard</Link>
+            <Link href="/dashboardv2">Back to dashboard</Link>
           </Button>
         </div>
 

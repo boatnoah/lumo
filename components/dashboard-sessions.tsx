@@ -43,7 +43,7 @@ export function DashboardSessions({
                   className="rounded-lg border px-4 py-3 transition hover:border-primary hover:bg-muted"
                 >
                   <Link
-                    href={`/dashboard/sessions/${session.session_id}/edit`}
+                    href={`/sessions/${session.session_id}/edit`}
                     className="block"
                   >
                     <p className="font-semibold">
@@ -57,14 +57,14 @@ export function DashboardSessions({
                   </Link>
                   <div className="mt-2 flex flex-wrap gap-3 text-sm">
                     <Link
-                      href={`/dashboard/sessions/${session.session_id}/edit`}
+                      href={`/sessions/${session.session_id}/edit`}
                       className="text-primary hover:underline"
                     >
                       Edit
                     </Link>
                     <span className="text-muted-foreground">•</span>
                     <Link
-                      href={`/dashboard/sessions/${session.session_id}/live`}
+                      href={`/sessions/${session.session_id}/live`}
                       className="text-primary hover:underline"
                     >
                       Go live

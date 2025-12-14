@@ -20,7 +20,7 @@ export default function RoleStep({ hasAvatar }: { hasAvatar: boolean }) {
     await supabase.from("profiles").update({ role }).eq("user_id", user.id);
 
     // If avatar not set yet, go to avatar step; else finish
-    router.replace(hasAvatar ? "/dashboard" : "/profile/avatar");
+    router.replace(hasAvatar ? "/dashboardv2" : "/profile/avatar");
   };
 
   return (

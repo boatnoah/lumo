@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  let destination = "/dashboard";
+  let destination = "/dashboardv2";
 
   if (!profile) {
     const { error } = await supabase.from("profiles").insert({
