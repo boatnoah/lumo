@@ -50,14 +50,12 @@ export default async function StudentSessionPage({
     .maybeSingle();
 
   if (profile?.role !== "student") {
-    redirect("/dashboard");
+    redirect("/dashboardv2");
   }
 
   const { data: session } = await supabase
     .from("sessions")
-    .select(
-      "session_id, title, description, join_code, status, current_prompt",
-    )
+    .select("session_id, title, description, join_code, status, current_prompt")
     .eq("session_id", sessionId)
     .maybeSingle<SessionRow>();
 
@@ -87,10 +85,10 @@ export default async function StudentSessionPage({
         status: session.status,
         current_prompt: session.current_prompt,
       }}
-      user={{ 
-        id: user.id, 
+      user={{
+        id: user.id,
         name: profile?.display_name || "You",
-        avatar: profile?.avatar || null 
+        avatar: profile?.avatar || null,
       }}
       initialPrompt={prompt}
     />

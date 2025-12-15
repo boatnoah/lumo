@@ -228,7 +228,7 @@ export default function SessionBuilder({
         return;
       }
       toast.success("Session is live. Opening the live view...");
-      router.push(`/dashboard/sessions/${sessionId}/live`);
+      router.push(`/sessions/${sessionId}/live`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not go live.");
     } finally {

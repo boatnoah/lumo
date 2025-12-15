@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   Card,
@@ -103,6 +104,7 @@ export default function LiveTeacherView({
   user: { id: string; name: string; avatar: string | null };
   prompts: PromptRow[];
 }) {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const chatChannelRef = useRef<RealtimeChannel | null>(null);
@@ -158,7 +160,9 @@ export default function LiveTeacherView({
         >["payload"];
         setPrompts((prev) =>
           prev.map((p) =>
-            p.prompt_id === data.prompt_id ? { ...p, is_open: data.is_open } : p,
+            p.prompt_id === data.prompt_id
+              ? { ...p, is_open: data.is_open }
+              : p,
           ),
         );
       })
@@ -311,7 +315,9 @@ export default function LiveTeacherView({
     const loadMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("message_id, body, user_id, created_at, profiles(display_name, avatar)")
+        .select(
+          "message_id, body, user_id, created_at, profiles(display_name, avatar)",
+        )
         .eq("session_id", session.session_id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -468,8 +474,11 @@ export default function LiveTeacherView({
       setCurrentPromptId(null);
       setPrompts((prev) => prev.map((p) => ({ ...p, is_open: false })));
       toast.success("Session ended.");
+      router.push("/dashboardv2");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not end session.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not end session.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -479,7 +488,7 @@ export default function LiveTeacherView({
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
-    
+
     const { data, error } = await supabase
       .from("messages")
       .insert({
@@ -493,7 +502,7 @@ export default function LiveTeacherView({
       toast.error("Could not send message.");
       return;
     }
-    
+
     // Broadcast the new message
     if (data && data[0] && chatChannelRef.current) {
       const newMessage: ChatMessage = {
@@ -534,7 +543,7 @@ export default function LiveTeacherView({
               {sessionStatus}
             </Badge>
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/dashboard/sessions/${session.session_id}/edit`}>
+              <Link href={`/sessions/${session.session_id}/edit`}>
                 Edit session
               </Link>
             </Button>
@@ -612,7 +621,8 @@ export default function LiveTeacherView({
                 {selectedPrompt ? "Selected prompt" : "Pick a prompt"}
               </CardTitle>
               <CardDescription>
-                Show a prompt to students and control whether responses are open.
+                Show a prompt to students and control whether responses are
+                open.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -657,7 +667,8 @@ export default function LiveTeacherView({
                       <p className="text-sm font-semibold">Answers</p>
                       {currentPrompt ? (
                         <Badge variant="outline">
-                          {answers.length} response{answers.length === 1 ? "" : "s"}
+                          {answers.length} response
+                          {answers.length === 1 ? "" : "s"}
                         </Badge>
                       ) : null}
                     </div>
@@ -693,7 +704,10 @@ export default function LiveTeacherView({
                     >
                       <Avatar className="h-8 w-8 shrink-0">
                         {msg.avatar ? (
-                          <AvatarImage src={msg.avatar} alt={msg.display_name} />
+                          <AvatarImage
+                            src={msg.avatar}
+                            alt={msg.display_name}
+                          />
                         ) : (
                           <AvatarFallback>
                             {msg.display_name.slice(0, 2).toUpperCase()}
@@ -702,7 +716,9 @@ export default function LiveTeacherView({
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold">{msg.display_name}</span>
+                          <span className="font-semibold">
+                            {msg.display_name}
+                          </span>
                           <span className="text-[11px] opacity-70">
                             {new Date(msg.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -710,7 +726,9 @@ export default function LiveTeacherView({
                             })}
                           </span>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap break-words">{msg.body}</p>
+                        <p className="mt-1 whitespace-pre-wrap break-words">
+                          {msg.body}
+                        </p>
                       </div>
                     </div>
                   ))
@@ -833,7 +851,9 @@ function PromptPreview({ prompt }: { prompt: PromptRow }) {
           {content.prompt || "Long answer prompt"}
         </p>
         {content.rubricHint ? (
-          <p className="text-sm text-muted-foreground">Hint: {content.rubricHint}</p>
+          <p className="text-sm text-muted-foreground">
+            Hint: {content.rubricHint}
+          </p>
         ) : null}
       </div>
     );

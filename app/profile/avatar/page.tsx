@@ -17,11 +17,10 @@ export default async function AvatarPage() {
 
   // Must pick role first
   if (!profile?.role) {
-    console.log("bruh");
     redirect("/profile");
   }
   // If already finished, skip
-  if (profile?.role && profile?.avatar) redirect("/dashboard");
+  if (profile?.role && profile?.avatar) redirect("/dashboardv2");
 
   return <AvatarStep />;
 }

@@ -18,8 +18,7 @@ export default async function Page() {
   // If profile missing (shouldn’t happen since callback inserts), fall back to this page
   // If already completed, skip onboarding
   if (profile?.role && profile?.avatar) {
-    console.log("bruh");
-    redirect("/dashboard");
+    redirect("/dashboardv2");
   }
 
   return <RoleStep hasAvatar={!!profile?.avatar} />;

@@ -6,8 +6,18 @@ function generateJoinCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
+
+  let title: string | undefined;
+  try {
+    const body = (await request.json()) as { title?: unknown } | null;
+    if (typeof body?.title === "string") {
+      title = body.title.trim();
+    }
+  } catch {
+    // no body is fine; fall back to default title
+  }
 
   const {
     data: { user },
@@ -23,13 +33,14 @@ export async function POST() {
 
   for (let i = 0; i < 10; i++) {
     const join_code = generateJoinCode();
+    const safeTitle = title && title.length > 0 ? title : "Untitled session";
 
     const { data, error } = await supabase
       .from("sessions")
       .insert({
         owner_id: user.id,
         status: "draft",
-        title: "Untitled session",
+        title: safeTitle,
         join_code,
       })
       .select()

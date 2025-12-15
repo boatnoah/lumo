@@ -41,7 +41,7 @@ export function NavMain({ items, role }: { items: NavItem[]; role: Role }) {
     const { session } = await res.json();
     console.log(session);
 
-    router.push(`/dashboard/sessions/${session.session_id}/edit`);
+    router.push(`/sessions/${session.session_id}/edit`);
   };
 
   return (
