@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -188,7 +189,17 @@ export function DashboardV2({
                 <Plus className="h-4 w-4" />
                 New session
               </Button>
-            ) : null}
+            ) : (
+              <Button
+                asChild
+                className="h-10 rounded-md border border-border bg-foreground px-4 text-sm font-semibold text-background shadow-sm transition hover:opacity-90"
+              >
+                <Link href="/session">
+                  <Plus className="h-4 w-4" />
+                  Join session
+                </Link>
+              </Button>
+            )}
           </div>
         </header>
 
