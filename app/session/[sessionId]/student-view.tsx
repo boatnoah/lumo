@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Maximize, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,7 @@ export default function StudentLiveView({
   const [presence, setPresence] = useState<PresenceUser[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Realtime prompt updates
   useEffect(() => {
@@ -361,6 +363,17 @@ export default function StudentLiveView({
 
   const isPromptText = currentPrompt && currentPrompt.kind !== "mcq";
 
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullscreen]);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-4 py-8 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
@@ -491,7 +504,11 @@ export default function StudentLiveView({
             <CardContent className="space-y-4">
               {currentPrompt ? (
                 <>
-                  <PromptDisplay prompt={currentPrompt} />
+                  <PromptDisplay 
+                    prompt={currentPrompt}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+                  />
                   <Separator />
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -581,27 +598,76 @@ export default function StudentLiveView({
   );
 }
 
-function PromptDisplay({ prompt }: { prompt: PromptData }) {
+function PromptDisplay({ 
+  prompt,
+  isFullscreen,
+  onToggleFullscreen,
+}: { 
+  prompt: PromptData;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+}) {
   if (prompt.kind === "slide") {
     const imageUrl = (prompt.content as SlideContent | undefined)?.imageUrl;
+    
     return (
-      <div className="space-y-2">
-        <Badge variant="outline">Slide</Badge>
-        {imageUrl ? (
-          <div className="overflow-hidden rounded-lg border bg-muted/40">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={`Slide ${prompt.slide_index + 1}`}
-              className="w-full"
-            />
+      <>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Badge variant="outline">Slide</Badge>
+            {imageUrl && onToggleFullscreen && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleFullscreen}
+                className="h-8 gap-2"
+              >
+                <Maximize className="h-4 w-4" />
+                Fullscreen
+              </Button>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No slide image available.
-          </p>
+          {imageUrl ? (
+            <div className="overflow-hidden rounded-lg border bg-muted/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={`Slide ${prompt.slide_index + 1}`}
+                className="w-full"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No slide image available.
+            </p>
+          )}
+        </div>
+        
+        {isFullscreen && imageUrl && onToggleFullscreen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+            onClick={onToggleFullscreen}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-4 top-4 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20"
+              onClick={onToggleFullscreen}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            <div className="relative h-full w-full p-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt={`Slide ${prompt.slide_index + 1} - Fullscreen`}
+                className="h-full w-full object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
         )}
-      </div>
+      </>
     );
   }
 
