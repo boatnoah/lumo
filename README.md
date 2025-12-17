@@ -1,38 +1,123 @@
-# Lumo: Interactive Classroom Engagement Platform
+# Lumo
 
-Lumo is a next-generation classroom engagement tool that builds on the idea of Pear Deck, giving teachers richer controls and students a more empowering, interactive experience.
+Lumo is a Next.js + Supabase classroom engagement app for running live, interactive sessions with slides, prompts, realtime responses, and chat.
 
-## Overview
+## What’s Included
 
-Classroom participation today is often limited and performative. Tools like Pear Deck provide interactivity but lack real-time feedback, customization, and emotional insight. Lumo solves this by combining live collaboration, analytics, and AI-powered insights in one seamless platform.
+### Auth + Onboarding
 
-## Features
+- Email/password auth and Google OAuth via Supabase.
+- Guided onboarding to choose a role (`teacher` or `student`) and select an avatar.
+- Role-based access (teachers create/run sessions; students join and respond).
 
-- **Teacher Dashboard:** Create polls, quizzes, debates, and reflections instantly.
-- **Student Engagement:** Students join from any device and participate anonymously if desired.
-- **Real-Time Analytics:** Teachers see instant comprehension and engagement data.
-- **AI Insights:** Summarizes responses, detects misconceptions, and suggests follow-up questions.
-- **Equity Tracking:** Ensures balanced participation and inclusivity.
-- **Gamified Learning:** Students earn streaks and contribution points to stay motivated.
+### Sessions (Teacher)
 
-## Why Now
+- Sessions dashboard: create sessions, search/filter by status (`draft`, `live`, `ended`), and delete sessions.
+- Session builder:
+  - Upload a PDF and convert pages into slide prompts (stored in Supabase Storage).
+  - Add interactive prompts: multiple choice (MCQ), short response, and long response.
+  - Drag-and-drop reorder prompts/slides.
+  - Save changes and go live.
 
-Post-COVID classrooms need hybrid-ready, tech-driven engagement tools. Teachers are expected to make learning interactive and inclusive, while students expect experiences that match the interactivity of modern apps like TikTok or Duolingo.
+### Live Room (Teacher)
 
-## Technical Overview
+- Share a 6‑digit join code.
+- Set the current prompt shown to students.
+- Open/close responses on the current prompt.
+- View incoming answers in realtime.
+- Built-in realtime chat with students.
+- End a session (moves it to `ended`).
 
-- **Frontend:** Next.js (React + TypeScript), Tailwind CSS
-- **Backend:** Node.js (Express or NestJS), PostgreSQL
-- **Real-Time:** WebSockets for live interactions
-- **AI Layer:** OpenAI or Gemini integration for analysis and summaries
-- **Notifications:** SendGrid for in-app and email updates
+### Live Room (Student)
 
-## Value
+- Join a live session using the 6‑digit join code.
+- Realtime updates when the teacher changes prompts or opens/closes responses.
+- Submit answers to the active prompt (MCQ / short / long text).
+- Live chat.
+- Presence tracking (see who’s currently in the room).
+- Leave session and return later.
 
-- **For Students:** Lowers anxiety and makes participation meaningful.
-- **For Teachers:** Saves time and provides actionable insights.
-- **For Schools:** Delivers data on engagement and teaching effectiveness.
+## Tech Stack
 
-## Branding
+- Next.js (App Router) + React + TypeScript
+- Tailwind CSS + Radix UI components
+- Supabase (Auth, Postgres, Realtime, Storage)
 
-Lumo’s branding centers on a glowing pulse icon that changes color with engagement levels, symbolizing energy and inclusivity in the classroom. So much fun!
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+ recommended
+- npm
+- A Supabase project (or local Supabase) for Auth/DB/Realtime/Storage
+
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Create a `.env.local` in the project root:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE="YOUR_SUPABASE_ANON_KEY"
+```
+
+Notes:
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE` is the Supabase “anon/public” key (the app uses it in both server and client environments).
+- If these aren’t set, the app will fail at runtime because the Supabase clients assert non-null env vars.
+
+### 3) Supabase setup (required for the app to work)
+
+At a minimum, the app expects these tables:
+
+- `profiles` (user profile, role, avatar)
+- `sessions` (created sessions, join codes, status, current prompt)
+- `prompts` (slides + interactive prompts per session)
+- `answers` (student responses per prompt)
+- `messages` (chat messages per session)
+- `session_members` (join/leave tracking)
+
+Storage:
+
+- Create a Storage bucket named `slides` (used for uploaded PDF slide images).
+
+Realtime:
+
+- Enable Realtime replication for `sessions` (students receive live status/current prompt updates).
+- Enable Realtime replication for `answers` (teachers see answers update live).
+- Presence and broadcast channels are also used for instant updates.
+
+Auth:
+
+- If using Google sign-in, enable the Google provider in Supabase Auth.
+- Set redirect URLs to include:
+  - `http://localhost:3000/auth/callback` (local)
+  - `https://YOUR_DOMAIN/auth/callback` (production)
+
+### 4) Run the app
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Scripts
+
+- `npm run dev` — start local dev server
+- `npm run build` — production build
+- `npm run start` — run production server
+- `npm run lint` — lint
+
+## Typical Flow
+
+- Teacher: sign in → dashboard → create session → edit session → upload slides/add prompts → save → go live → manage prompts & responses in the live room.
+- Student: sign in → pick `student` role → join using code at `/session` → respond + chat → leave when done.
+
+## Notes / Customization
+
+- Avatar options are currently hard-coded in `app/profile/avatar/avatar-step.tsx`. Update those URLs if you want to host avatars in your own project.
