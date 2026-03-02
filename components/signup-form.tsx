@@ -157,7 +157,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
             {error && (
               <Field>
-                <FieldDescription className="text-red-500">
+                <FieldDescription className="text-destructive">
                   {error}
                 </FieldDescription>
               </Field>

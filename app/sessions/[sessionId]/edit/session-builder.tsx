@@ -615,7 +615,7 @@ function SortableItem({
       </button>
       <button
         onClick={onDelete}
-        className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-red-50 hover:text-destructive"
+        className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         aria-label="Delete prompt"
       >
         <XIcon className="h-4 w-4" />
@@ -793,7 +793,7 @@ function PromptEditor({
             <img
               src={content.imageUrl}
               alt={content.sourcePdf || "Slide"}
-              className="h-[260px] w-full object-contain bg-white"
+              className="h-[260px] w-full object-contain bg-card"
             />
           </div>
         </div>
@@ -847,7 +847,7 @@ function PromptPreview({ prompt }: { prompt: PromptDraft }) {
           <img
             src={content.imageUrl}
             alt={content.sourcePdf || "Slide"}
-            className="w-full rounded-md border bg-white object-contain"
+            className="w-full rounded-md border bg-card object-contain"
           />
         </div>
       </div>

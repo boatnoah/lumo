@@ -375,14 +375,14 @@ export default function StudentLiveView({
   }, [isFullscreen]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-4 py-8 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <main className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            <p className="text-sm font-medium text-info">
               Live session
             </p>
-            <h1 className="text-3xl font-semibold">{session.title}</h1>
+            <h1 className="text-3xl font-medium">{session.title}</h1>
             <p className="text-muted-foreground">{session.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -424,7 +424,7 @@ export default function StudentLiveView({
                   {participantCount} online
                 </span>
               </div>
-              <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border bg-white/70 p-2 dark:bg-slate-900/60">
+              <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border bg-card/70 p-2">
                 {messages.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No messages yet.

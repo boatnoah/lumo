@@ -117,7 +117,7 @@ export function LoginForm({
 
               {error && (
                 <Field>
-                  <FieldDescription className="text-red-500">
+                  <FieldDescription className="text-destructive">
                     {error}
                   </FieldDescription>
                 </Field>

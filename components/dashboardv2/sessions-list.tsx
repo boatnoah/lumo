@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -28,21 +27,21 @@ const statusStyles: Record<
   { bg: string; text: string; border: string; label: string }
 > = {
   live: {
-    bg: "bg-emerald-50 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-100",
-    border: "border-emerald-100 dark:border-emerald-900/60",
+    bg: "bg-success/10",
+    text: "text-success",
+    border: "border-success/20",
     label: "Live",
   },
   draft: {
-    bg: "bg-amber-50 dark:bg-amber-900/30",
-    text: "text-amber-800 dark:text-amber-100",
-    border: "border-amber-100 dark:border-amber-900/60",
+    bg: "bg-warning/10",
+    text: "text-warning-foreground",
+    border: "border-warning/20",
     label: "Draft",
   },
   ended: {
-    bg: "bg-slate-100 dark:bg-slate-900/40",
-    text: "text-slate-700 dark:text-slate-100",
-    border: "border-slate-200 dark:border-slate-800",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
+    border: "border-border",
     label: "Ended",
   },
 };
@@ -69,21 +68,21 @@ export function SessionsList({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
       <div className="hidden md:block">
-        <Table className="[&_th]:bg-muted/60">
+        <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[40%] px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <TableRow className="border-b border-border/60 hover:bg-transparent">
+              <TableHead className="w-[40%] px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Session
               </TableHead>
-              <TableHead className="w-[12%] text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <TableHead className="w-[12%] py-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Status
               </TableHead>
-              <TableHead className="w-[18%] text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <TableHead className="w-[18%] py-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Last active
               </TableHead>
-              <TableHead className="w-[18%] text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <TableHead className="w-[18%] py-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Created
               </TableHead>
               <TableHead className="w-[12%]" />
@@ -94,20 +93,19 @@ export function SessionsList({
               ? Array.from({ length: 5 }).map((_, index) => (
                   <TableRow
                     key={`skeleton-${index}`}
-                    className="animate-pulse border-b border-border/80"
+                    className="animate-pulse border-b border-border/40"
                   >
                     <TableCell className="px-4 py-4">
-                      <div className="h-4 w-48 rounded bg-muted" />
-                      <div className="mt-2 h-3 w-24 rounded bg-muted" />
+                      <div className="h-4 w-48 rounded bg-muted/70" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-5 w-16 rounded bg-muted" />
+                      <div className="h-5 w-14 rounded-full bg-muted/70" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-4 w-24 rounded bg-muted" />
+                      <div className="h-3.5 w-20 rounded bg-muted/70" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-4 w-24 rounded bg-muted" />
+                      <div className="h-3.5 w-20 rounded bg-muted/70" />
                     </TableCell>
                     <TableCell />
                   </TableRow>
@@ -129,13 +127,12 @@ export function SessionsList({
           ? Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={`skeleton-mobile-${index}`}
-                className="animate-pulse rounded-lg border border-border bg-card p-3"
+                className="animate-pulse rounded-lg border border-border/60 bg-card p-3"
               >
-                <div className="h-4 w-40 rounded bg-muted" />
-                <div className="mt-2 h-3 w-24 rounded bg-muted" />
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="h-5 w-16 rounded bg-muted" />
-                  <div className="h-4 w-20 rounded bg-muted" />
+                <div className="h-4 w-40 rounded bg-muted/70" />
+                <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-3">
+                  <div className="h-5 w-14 rounded-full bg-muted/70" />
+                  <div className="h-3.5 w-16 rounded bg-muted/70" />
                 </div>
               </div>
             ))
@@ -164,14 +161,14 @@ function SessionRow({
   const status = statusStyles[session.status];
 
   return (
-    <TableRow className="group cursor-pointer border-b border-border/80 transition-colors hover:bg-muted/50">
-      <TableCell className="px-4">
+    <TableRow className="group cursor-pointer border-b border-border/40 transition-colors hover:bg-muted/30">
+      <TableCell className="px-4 py-3.5">
         <Link
           href={`/sessions/${session.id}/edit`}
-          className="flex flex-col gap-1"
+          className="block"
           prefetch={false}
         >
-          <span className="text-[15px] font-semibold text-foreground group-hover:underline">
+          <span className="text-[15px] font-semibold tracking-tight text-foreground">
             {session.title || "Untitled session"}
           </span>
         </Link>
@@ -179,7 +176,7 @@ function SessionRow({
       <TableCell>
         <Badge
           className={cn(
-            "h-6 rounded-full border px-2 text-xs font-semibold",
+            "h-[22px] rounded-full border px-2 text-[11px] font-medium",
             status.bg,
             status.text,
             status.border,
@@ -217,18 +214,18 @@ function MobileSessionCard({
   const status = statusStyles[session.status];
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:shadow-none">
+    <div className="rounded-lg border border-border/60 bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link href={`/sessions/${session.id}/edit`} prefetch={false}>
-            <p className="truncate text-[15px] font-semibold text-foreground">
+            <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">
               {session.title || "Untitled session"}
             </p>
           </Link>
         </div>
         <Badge
           className={cn(
-            "h-6 rounded-full border px-2 text-xs font-semibold",
+            "h-[22px] shrink-0 rounded-full border px-2 text-[11px] font-medium",
             status.bg,
             status.text,
             status.border,
@@ -238,10 +235,9 @@ function MobileSessionCard({
           {status.label}
         </Badge>
       </div>
-      <Separator className="my-3" />
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
             Last active
           </span>
           <TimeLabel
@@ -249,8 +245,8 @@ function MobileSessionCard({
             exact={session.lastActiveExact}
           />
         </div>
-        <div className="flex flex-col gap-1 text-right">
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <div className="flex flex-col gap-0.5 text-right">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
             Created
           </span>
           <TimeLabel
@@ -308,7 +304,7 @@ function RowMenu({
                 event.preventDefault();
                 onDelete(session);
               }}
-              className="text-red-600 focus:bg-red-50"
+              className="text-destructive focus:bg-destructive/10"
             >
               <Trash2 className="h-4 w-4" />
               Delete
@@ -323,7 +319,7 @@ function RowMenu({
 function TimeLabel({ label, exact }: { label: string; exact: string }) {
   return (
     <span
-      className="text-sm text-muted-foreground"
+      className="text-[13px] text-muted-foreground/70"
       title={exact}
       aria-label={`${label}, exact time ${exact}`}
     >

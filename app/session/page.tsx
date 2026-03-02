@@ -75,14 +75,14 @@ function JoinSessionContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 px-4 py-12 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <main className="min-h-screen bg-muted/30 px-4 py-12">
       <div className="mx-auto flex max-w-xl flex-col gap-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            <p className="text-sm font-medium text-info">
               Join a live session
             </p>
-            <h1 className="text-3xl font-semibold">Enter your code</h1>
+            <h1 className="text-3xl font-medium">Enter your code</h1>
           </div>
           <Button asChild variant="ghost">
             <Link href="/dashboardv2">Back to dashboard</Link>
@@ -100,7 +100,7 @@ function JoinSessionContent() {
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
               {leftNotice ? (
-                <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
+                <div className="rounded-md bg-success/10 px-4 py-3 text-sm text-success">
                   You left the session. Use a code to rejoin when you are ready.
                 </div>
               ) : null}

@@ -2,7 +2,11 @@ import { AuthButton } from "@/components/auth-button";
 import { HeroSection } from "@/components/landing/hero-section";
 import { FeatureSection } from "@/components/landing/feature-section";
 import { FinalCTA } from "@/components/landing/final-cta";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import {
+  AnimatedFeatureCards,
+  AnimatedStats,
+  CountUp,
+} from "@/components/landing/animated-sections";
 import Link from "next/link";
 import {
   SparklesIcon,
@@ -12,19 +16,8 @@ import {
   BarChart3Icon,
   ZapIcon,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    redirect("/dashboardv2");
-  }
-
   return (
     <main className="min-h-screen flex flex-col">
       {/* Navigation */}
@@ -37,7 +30,6 @@ export default async function Home() {
             Lumo
           </Link>
           <div className="flex items-center gap-4">
-            <ThemeSwitcher />
             <AuthButton />
           </div>
         </div>
@@ -52,7 +44,7 @@ export default async function Home() {
       <section className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4">
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 lg:gap-12 mb-32">
+          <AnimatedFeatureCards>
             <FeatureCard
               icon={<PresentationIcon className="w-8 h-8" />}
               title="Interactive Sessions"
@@ -68,7 +60,7 @@ export default async function Home() {
               title="Live Analytics"
               description="See who's participating, track responses, and adjust your teaching on the fly."
             />
-          </div>
+          </AnimatedFeatureCards>
         </div>
       </section>
 
@@ -78,13 +70,13 @@ export default async function Home() {
         description="Create engaging sessions with multiple question types—MCQ, short answer, or long response. Upload your existing slides as PDFs and weave in interactive prompts seamlessly."
         imagePosition="right"
       >
-        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950 shadow-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-accent-1/10 via-accent-1/5 to-primary/5 shadow-2xl border border-border flex items-center justify-center overflow-hidden">
           <div className="w-full h-full p-8 flex flex-col gap-4">
             <div className="bg-background/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <div className="w-3 h-3 rounded-full bg-destructive/70" />
+                <div className="w-3 h-3 rounded-full bg-warning/70" />
+                <div className="w-3 h-3 rounded-full bg-success/70" />
               </div>
               <div className="space-y-3">
                 <div className="h-4 bg-muted rounded-md w-3/4" />
@@ -112,19 +104,19 @@ export default async function Home() {
         description="Join any session instantly with a simple code. Participate anonymously or show your name. Chat with classmates and respond to prompts—all from any device."
         imagePosition="left"
       >
-        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950 dark:via-teal-950 dark:to-cyan-950 shadow-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-accent-2/10 via-accent-2/5 to-success/5 shadow-2xl border border-border flex items-center justify-center overflow-hidden">
           <div className="w-full h-full p-8 flex flex-col gap-4">
             <div className="bg-background/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50">
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent-1" />
                   <div className="flex-1">
                     <div className="h-3 bg-muted rounded w-24 mb-2" />
                     <div className="h-8 bg-muted rounded-lg" />
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-orange-500" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-3 to-accent-1" />
                   <div className="flex-1">
                     <div className="h-3 bg-muted rounded w-20 mb-2" />
                     <div className="h-8 bg-muted rounded-lg" />
@@ -147,7 +139,7 @@ export default async function Home() {
         description="See instant feedback on every question. Track participation, identify patterns, and adjust your approach in real-time to ensure every voice is heard."
         imagePosition="right"
       >
-        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950 dark:via-purple-950 dark:to-fuchsia-950 shadow-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+        <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-accent-3/10 via-accent-3/5 to-primary/5 shadow-2xl border border-border flex items-center justify-center overflow-hidden">
           <div className="w-full h-full p-8 flex flex-col gap-4">
             <div className="bg-background/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50">
               <div className="space-y-3">
@@ -169,33 +161,34 @@ export default async function Home() {
 
       {/* Stats Section */}
       <section className="py-24 lg:py-32 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-16">
-            Everything you need to engage every student
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <StatCard
-              icon={<SparklesIcon className="w-6 h-6" />}
-              label="Question Types"
-              value="4+"
-            />
-            <StatCard
-              icon={<ZapIcon className="w-6 h-6" />}
-              label="Real-Time"
-              value="Instant"
-            />
-            <StatCard
-              icon={<MessageSquareIcon className="w-6 h-6" />}
-              label="Live Chat"
-              value="Built-in"
-            />
-            <StatCard
-              icon={<UsersIcon className="w-6 h-6" />}
-              label="Anonymous"
-              value="Optional"
-            />
-          </div>
-        </div>
+        <AnimatedStats
+          heading={
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight mb-16">
+              Everything you need to engage every student
+            </h2>
+          }
+        >
+          <StatCard
+            icon={<SparklesIcon className="w-6 h-6" />}
+            label="Question Types"
+            value="4+"
+          />
+          <StatCard
+            icon={<ZapIcon className="w-6 h-6" />}
+            label="Real-Time"
+            value="Instant"
+          />
+          <StatCard
+            icon={<MessageSquareIcon className="w-6 h-6" />}
+            label="Live Chat"
+            value="Built-in"
+          />
+          <StatCard
+            icon={<UsersIcon className="w-6 h-6" />}
+            label="Anonymous"
+            value="Optional"
+          />
+        </AnimatedStats>
       </section>
 
       {/* Final CTA */}
@@ -244,10 +237,10 @@ function FeatureCard({
     <div className="group relative">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="relative p-6 lg:p-8">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
           <div className="text-primary">{icon}</div>
         </div>
-        <h3 className="text-xl font-semibold mb-3 tracking-tight">{title}</h3>
+        <h3 className="text-xl font-medium mb-3 tracking-tight">{title}</h3>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
@@ -266,7 +259,7 @@ function StatCard({
   return (
     <div className="p-6 rounded-2xl bg-muted/30 border border-border/50">
       <div className="flex justify-center mb-4 text-primary">{icon}</div>
-      <div className="text-3xl font-bold mb-2">{value}</div>
+      <CountUp value={value} />
       <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   );
