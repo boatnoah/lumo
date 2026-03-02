@@ -20,7 +20,7 @@ export default async function AvatarPage() {
     redirect("/profile");
   }
   // If already finished, skip
-  if (profile?.role && profile?.avatar) redirect("/dashboardv2");
+  if (profile?.role && profile?.avatar) redirect("/dashboard");
 
   return <AvatarStep />;
 }

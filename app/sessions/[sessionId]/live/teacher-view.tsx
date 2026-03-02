@@ -474,7 +474,7 @@ export default function LiveTeacherView({
       setCurrentPromptId(null);
       setPrompts((prev) => prev.map((p) => ({ ...p, is_open: false })));
       toast.success("Session ended.");
-      router.push("/dashboardv2");
+      router.push("/dashboard");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Could not end session.",

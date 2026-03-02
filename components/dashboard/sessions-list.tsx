@@ -164,7 +164,7 @@ function SessionRow({
     <TableRow className="group cursor-pointer border-b border-border/40 transition-colors hover:bg-muted/30">
       <TableCell className="px-4 py-3.5">
         <Link
-          href={`/sessions/${session.id}/edit`}
+          href={isTeacher ? `/sessions/${session.id}/edit` : `/session/${session.id}`}
           className="block"
           prefetch={false}
         >
@@ -217,7 +217,7 @@ function MobileSessionCard({
     <div className="rounded-lg border border-border/60 bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link href={`/sessions/${session.id}/edit`} prefetch={false}>
+          <Link href={isTeacher ? `/sessions/${session.id}/edit` : `/session/${session.id}`} prefetch={false}>
             <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">
               {session.title || "Untitled session"}
             </p>
@@ -288,7 +288,7 @@ function RowMenu({
       <DropdownMenuContent align="end" className="w-44 border-border">
         <DropdownMenuItem asChild>
           <Link
-            href={`/sessions/${session.id}/edit`}
+            href={isTeacher ? `/sessions/${session.id}/edit` : `/session/${session.id}`}
             className="flex items-center gap-2 text-foreground"
             prefetch={false}
           >

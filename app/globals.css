@@ -62,16 +62,6 @@
 
     /* Layout */
     --radius: 0.75rem;
-
-    /* Sidebar */
-    --sidebar-background: 42 40% 95%;
-    --sidebar-foreground: 150 15% 25%;
-    --sidebar-primary: 152 60% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 48 70% 90%;
-    --sidebar-accent-foreground: 150 15% 15%;
-    --sidebar-border: 42 25% 87%;
-    --sidebar-ring: 152 60% 45%;
   }
 
 }
@@ -83,24 +73,6 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Sidebar color bridge for components using --sidebar directly */
-:root {
-  --sidebar: hsl(var(--sidebar-background));
-  --sidebar-fg: hsl(var(--sidebar-foreground));
-}
-
-
-@theme inline {
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
 /* Smooth scrolling and animations */

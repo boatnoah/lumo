@@ -30,7 +30,7 @@ export default function LeaveSessionButton({
         return;
       }
 
-      router.replace("/dashboardv2");
+      router.replace("/dashboard");
     } catch (leaveError) {
       console.error(leaveError);
       setError("Could not leave right now.");

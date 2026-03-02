@@ -29,7 +29,7 @@ export default function AvatarStep() {
       .from("profiles")
       .update({ avatar: selected })
       .eq("user_id", user.id);
-    router.replace("/dashboardv2");
+    router.replace("/dashboard");
   };
 
   return (
@@ -72,7 +72,7 @@ export default function AvatarStep() {
           {saving ? "Saving..." : "Finish"}
         </button>
         <button
-          onClick={() => router.replace("/dashboardv2")}
+          onClick={() => router.replace("/dashboard")}
           className="rounded-xl px-4 py-2 border"
         >
           Skip for now

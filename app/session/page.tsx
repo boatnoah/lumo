@@ -85,7 +85,7 @@ function JoinSessionContent() {
             <h1 className="text-3xl font-medium">Enter your code</h1>
           </div>
           <Button asChild variant="ghost">
-            <Link href="/dashboardv2">Back to dashboard</Link>
+            <Link href="/dashboard">Back to dashboard</Link>
           </Button>
         </div>
 
