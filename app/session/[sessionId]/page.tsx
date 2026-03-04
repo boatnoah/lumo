@@ -50,7 +50,7 @@ export default async function StudentSessionPage({
     .maybeSingle();
 
   if (profile?.role !== "student") {
-    redirect("/dashboardv2");
+    redirect("/dashboard");
   }
 
   const { data: session } = await supabase

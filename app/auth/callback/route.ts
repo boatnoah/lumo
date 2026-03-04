@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (next && !next.startsWith("/")) next = null;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    return NextResponse.redirect(`${origin}/auth/error?error=missing_code`);
   }
 
   const supabase = await createClient();
@@ -19,7 +19,9 @@ export async function GET(request: Request) {
   // 1) Exchange auth code -> session cookie
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    return NextResponse.redirect(
+      `${origin}/auth/error?error=${encodeURIComponent(error.message)}`,
+    );
   }
 
   // 2) Ensure profile exists
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  let destination = "/dashboardv2";
+  let destination = "/dashboard";
 
   if (!profile) {
     const { error } = await supabase.from("profiles").insert({

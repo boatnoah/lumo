@@ -46,7 +46,7 @@ export default async function LiveSessionPage({
   }
 
   if (session.owner_id !== user.id) {
-    redirect("/dashboardv2");
+    redirect("/dashboard");
   }
 
   const { data: prompts } = await supabase

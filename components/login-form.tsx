@@ -43,7 +43,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      router.push("/dashboardv2");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -61,7 +61,7 @@ export function LoginForm({
         options: {
           redirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/auth/callback?next=/dashboardv2`
+              ? `${window.location.origin}/auth/callback?next=/dashboard`
               : undefined,
         },
       });
@@ -117,7 +117,7 @@ export function LoginForm({
 
               {error && (
                 <Field>
-                  <FieldDescription className="text-red-500">
+                  <FieldDescription className="text-destructive">
                     {error}
                   </FieldDescription>
                 </Field>

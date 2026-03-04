@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { SessionsList } from "./sessions-list";
 import type {
@@ -162,28 +161,20 @@ export function DashboardV2({
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 dark:bg-background">
-      <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 md:px-8 md:pt-10">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Dashboard
-            </p>
-            <h1 className="text-[28px] font-semibold text-foreground">
-              Sessions
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage or review every session in one place.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {role === "teacher" ? "Teacher view" : "Student view"}
+    <div className="min-h-screen bg-muted/30">
+      <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 md:px-8 md:pt-12">
+        <header className="animate-in flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-medium tracking-tight text-foreground">
+            Sessions
+          </h1>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs font-medium text-muted-foreground/70 sm:block">
+              {role === "teacher" ? "Teacher" : "Student"}
             </span>
             {role === "teacher" ? (
               <Button
                 onClick={() => setCreateOpen(true)}
-                className="h-10 rounded-md border border-border bg-foreground px-4 text-sm font-semibold text-background shadow-sm transition hover:opacity-90"
+                className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
                 disabled={submitting}
               >
                 <Plus className="h-4 w-4" />
@@ -192,7 +183,7 @@ export function DashboardV2({
             ) : (
               <Button
                 asChild
-                className="h-10 rounded-md border border-border bg-foreground px-4 text-sm font-semibold text-background shadow-sm transition hover:opacity-90"
+                className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
               >
                 <Link href="/session">
                   <Plus className="h-4 w-4" />
@@ -203,8 +194,8 @@ export function DashboardV2({
           </div>
         </header>
 
-        <div className="mt-6 rounded-2xl border border-border bg-card/90 shadow-sm">
-          <div className="border-b border-border px-4 py-4 md:px-6">
+        <div className="animate-in delay-100 mt-6">
+          <div className="px-1 pb-4">
             <Filters
               search={search}
               onSearch={setSearch}
@@ -214,7 +205,7 @@ export function DashboardV2({
               onSortBy={setSortBy}
             />
           </div>
-          <div className="p-3 md:p-4">
+          <div className="animate-in delay-200">
             {error ? (
               <ErrorBanner message={error} />
             ) : (
@@ -264,7 +255,7 @@ export function DashboardV2({
               </Button>
               <Button
                 type="submit"
-                className="bg-foreground text-background hover:opacity-90"
+                className="bg-primary text-primary-foreground hover:opacity-90"
                 disabled={submitting}
               >
                 {submitting ? "Creating..." : "Create session"}
@@ -333,26 +324,25 @@ function Filters({
 }) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-1 items-center gap-2">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <div className="flex flex-1 flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
           <Input
             value={search}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Search by title or ID"
-            className="h-10 w-full rounded-md border-border bg-background pl-10 text-sm text-foreground shadow-[0_1px_0_rgba(0,0,0,0.04)] focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="Search sessions…"
+            className="h-9 w-full rounded-lg border-border/60 bg-background pl-9 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Search sessions"
           />
         </div>
-        <Separator orientation="vertical" className="hidden h-6 md:block" />
-        <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1">
+        <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
           {statusFilterOptions.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => onStatusFilter(option)}
               className={cn(
-                "rounded-md px-3 py-2 text-xs font-semibold capitalize transition",
+                "rounded-md px-2.5 py-1.5 text-xs font-medium capitalize transition-all",
                 option === statusFilter
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
@@ -364,24 +354,22 @@ function Filters({
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Select
-          value={sortBy}
-          onValueChange={(value) => onSortBy(value as SortOption)}
-        >
-          <SelectTrigger className="h-10 w-[200px] rounded-md border-border bg-background text-sm text-foreground focus:ring-2 focus:ring-ring">
-            <SelectValue placeholder="Sort" />
-          </SelectTrigger>
-          <SelectContent className="border-border">
-            <SelectItem value="recent" className="text-foreground">
-              Sort by last active
-            </SelectItem>
-            <SelectItem value="created" className="text-foreground">
-              Sort by created
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Select
+        value={sortBy}
+        onValueChange={(value) => onSortBy(value as SortOption)}
+      >
+        <SelectTrigger className="h-9 w-[180px] rounded-lg border-border/60 bg-background text-xs text-muted-foreground focus:ring-2 focus:ring-ring">
+          <SelectValue placeholder="Sort" />
+        </SelectTrigger>
+        <SelectContent className="border-border">
+          <SelectItem value="recent" className="text-sm text-foreground">
+            Sort by last active
+          </SelectItem>
+          <SelectItem value="created" className="text-sm text-foreground">
+            Sort by created
+          </SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

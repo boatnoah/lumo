@@ -474,7 +474,7 @@ export default function LiveTeacherView({
       setCurrentPromptId(null);
       setPrompts((prev) => prev.map((p) => ({ ...p, is_open: false })));
       toast.success("Session ended.");
-      router.push("/dashboardv2");
+      router.push("/dashboard");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Could not end session.",
@@ -522,14 +522,14 @@ export default function LiveTeacherView({
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-4 py-10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <main className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            <p className="text-sm font-medium text-info">
               Teacher live room
             </p>
-            <h1 className="text-3xl font-semibold">{session.title}</h1>
+            <h1 className="text-3xl font-medium">{session.title}</h1>
             <p className="text-muted-foreground">{session.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -691,7 +691,7 @@ export default function LiveTeacherView({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex h-[600px] flex-col gap-3">
-              <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border bg-white/70 p-2 dark:bg-slate-900/60">
+              <div className="flex-1 space-y-2 overflow-y-auto rounded-lg border bg-card/70 p-2">
                 {messages.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No messages yet.
@@ -894,7 +894,7 @@ function AnswersList({
       {answers.map((answer) => (
         <div
           key={answer.answer_id}
-          className="rounded-md border bg-white/70 px-3 py-2 text-sm shadow-sm dark:bg-slate-900/60"
+          className="rounded-md border bg-card/70 px-3 py-2 text-sm shadow-sm"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">{answer.display_name}</span>

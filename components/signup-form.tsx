@@ -47,17 +47,17 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         password,
         options: {
           // If you’re using a unified /auth/confirm route, you can change this to:
-          // emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboardv2`,
+          // emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
           emailRedirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/dashboardv2`
+              ? `${window.location.origin}/dashboard`
               : undefined,
           data: { full_name: name },
         },
       });
 
       if (error) throw error;
-      router.push("/dashboardv2");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -76,7 +76,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
           // Use your callback that exchanges the code and then redirects to /dashboard
           redirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/auth/callback?next=/dashboardv2`
+              ? `${window.location.origin}/auth/callback?next=/dashboard`
               : undefined,
         },
       });
@@ -157,7 +157,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
             {error && (
               <Field>
-                <FieldDescription className="text-red-500">
+                <FieldDescription className="text-destructive">
                   {error}
                 </FieldDescription>
               </Field>
