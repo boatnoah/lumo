@@ -4,7 +4,7 @@ Lumo is a Next.js + Supabase classroom engagement app for running live, interact
 
 ## Product Demo
 
-<video src="docs/assets/lumo-product-demo.mp4" controls muted playsinline width="100%">
+<video src="https://github.com/boatnoah/lumo/raw/refs/heads/main/docs/assets/lumo-product-demo.mp4" controls muted playsinline width="100%">
   Your browser does not support the video tag.
 </video>
 
@@ -73,6 +73,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE="YOUR_SUPABASE_ANON_KEY"
 ```
 
 Notes:
+
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE` is the Supabase “anon/public” key (the app uses it in both server and client environments).
 - If these aren’t set, the app will fail at runtime because the Supabase clients assert non-null env vars.
 
