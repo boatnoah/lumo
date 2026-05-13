@@ -1,12 +1,8 @@
 # Lumo
 
-Lumo is a Next.js + Supabase classroom engagement app for running live, interactive sessions with slides, prompts, realtime responses, and chat.
+https://github.com/user-attachments/assets/c7f0e4c6-9a0b-43e5-9117-03a89b5e1764
 
-## Product Demo
 
-<video src="https://github.com/boatnoah/lumo/raw/refs/heads/main/docs/assets/lumo-product-demo.mp4" controls muted playsinline width="100%">
-  Your browser does not support the video tag.
-</video>
 
 ## What’s Included
 
